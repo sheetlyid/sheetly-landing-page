@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sheetly · Bank Soal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --paper:#f4f0e7; --paper-2:#fbf9f4; --ink:#211d18; --ink-soft:#5c544a;
+    --line:#ddd5c6; --accent:#136f5b; --accent-deep:#0d5546; --gold:#c08a2d; --rust:#b6492f;
+    --shadow:0 1px 2px rgba(33,29,24,.04), 0 8px 24px -12px rgba(33,29,24,.18); --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--paper);color:var(--ink);font-family:'Plus Jakarta Sans',sans-serif;-webkit-font-smoothing:antialiased}
+  body{background-image:radial-gradient(circle at 1px 1px, rgba(33,29,24,.035) 1px, transparent 0);background-size:22px 22px;min-height:100vh}
+  .wrap{max-width:980px;margin:0 auto;padding:32px 22px 90px}
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:14px}
+  .brand h1{font-family:'Fraunces',serif;font-weight:600;font-size:34px;letter-spacing:-.5px;line-height:1}
+  .brand h1 span{color:var(--accent)}
+  .brand p{color:var(--ink-soft);font-size:14px;margin-top:7px;max-width:46ch}
+  .gactions{display:flex;gap:8px}
+  .btn{font-family:inherit;font-size:13.5px;font-weight:600;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);padding:9px 14px;border-radius:10px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:7px}
+  .btn:hover{border-color:var(--ink-soft);transform:translateY(-1px)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover{background:var(--accent-deep);border-color:var(--accent-deep)}
+  .btn.ghost{background:transparent}
+  .btn.danger{color:var(--rust);border-color:#e6c9c0}
+  .btn.danger:hover{background:#fbeeea;border-color:var(--rust)}
+  .btn svg{width:15px;height:15px}
+  .btn.sm{padding:6px 10px;font-size:12.5px;border-radius:8px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .status{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--paper-2);margin-bottom:22px}
+  .status .dot{width:8px;height:8px;border-radius:50%;background:var(--gold)}
+  .status.ok .dot{background:var(--accent)} .status.ok{color:var(--accent-deep)}
+  .status.err .dot{background:var(--rust)} .status.err{color:var(--rust);border-color:#e6c9c0}
+  .status .retry{margin-left:4px;text-decoration:underline;cursor:pointer}
+  .tabs{display:inline-flex;background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:5px;gap:4px;margin-bottom:24px;box-shadow:var(--shadow)}
+  .tab{font-family:inherit;font-weight:600;font-size:14px;border:none;background:transparent;color:var(--ink-soft);padding:9px 18px;border-radius:8px;cursor:pointer;transition:all .15s}
+  .tab.active{background:var(--ink);color:var(--paper)}
+  .tab .cnt{font-size:11px;opacity:.7;margin-left:5px}
+  .panel{display:none;animation:fade .35s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card{background:var(--paper-2);border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);margin-bottom:18px}
+  .card h2.sec{font-family:'Fraunces',serif;font-weight:600;font-size:21px;margin-bottom:3px}
+  .card .sub{color:var(--ink-soft);font-size:13px;margin-bottom:18px}
+  label.fl{display:block;font-size:12.5px;font-weight:600;color:var(--ink-soft);margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em}
+  .field{margin-bottom:16px}
+  input[type=text],textarea,select{width:100%;font-family:inherit;font-size:14.5px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:11px 13px;transition:border .15s}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
+  textarea{resize:vertical;min-height:64px;line-height:1.5}
+  .row{display:grid;grid-template-columns:1fr 1fr 220px;gap:14px}
+  .opt-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+  .opt-line{display:flex;align-items:center;gap:9px}
+  .opt-letter{width:30px;height:38px;flex:0 0 30px;display:grid;place-items:center;font-family:'Fraunces',serif;font-weight:600;font-size:16px;background:var(--paper);border:1px solid var(--line);border-radius:8px}
+  .opt-line input{flex:1}
+  .ans-pick{display:flex;gap:8px;flex-wrap:wrap}
+  .ans-chip{cursor:pointer;font-weight:600;font-size:14px;width:40px;height:40px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--paper);transition:all .12s;font-family:'Fraunces',serif}
+  .ans-chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .pill-pick{display:flex;flex-wrap:wrap;gap:8px}
+  .pill{cursor:pointer;font-size:13px;font-weight:500;padding:7px 13px;border:1px solid var(--line);border-radius:999px;background:var(--paper);transition:all .12s;display:inline-flex;align-items:center;gap:6px}
+  .pill.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .pill .x{opacity:.5;font-weight:700} .pill .x:hover{opacity:1}
+  .addtag{display:flex;gap:8px;margin-top:10px}
+  .addtag input{flex:1}
+  .id-preview{font-family:'Fraunces',serif;font-weight:600;color:var(--accent);font-size:15px}
+  .id-preview.edit{color:var(--gold)}
+  .form-foot{display:flex;gap:10px;align-items:center;margin-top:6px}
+  .editing-flag{font-size:13px;color:var(--gold);font-weight:600;display:none}
+  details.mgr{margin-top:14px;border-top:1px dashed var(--line);padding-top:14px}
+  details.mgr summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-soft);list-style:none}
+  details.mgr summary::-webkit-details-marker{display:none}
+  details.mgr summary::before{content:"⌄ ";color:var(--accent)}
+  .chip-list{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .chip-tag{font-size:12.5px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px}
+  .chip-tag code{font-family:'Fraunces',serif;font-weight:600;color:var(--accent)}
+  .chip-tag .x{cursor:pointer;color:var(--rust);font-weight:700;opacity:.6} .chip-tag .x:hover{opacity:1}
+  .filterbar{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:18px}
+  .filterbar .field{margin:0;min-width:150px}
+  .filterbar input[type=text]{min-width:200px}
+  .qcount{font-size:13px;color:var(--ink-soft);margin-bottom:12px;font-weight:500}
+  .qitem{background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:15px 17px;margin-bottom:11px;transition:border .15s}
+  .qitem:hover{border-color:var(--ink-soft)}
+  .qhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .qid{font-family:'Fraunces',serif;font-weight:700;font-size:14px;color:var(--accent);background:var(--paper);border:1px solid var(--line);padding:3px 9px;border-radius:7px}
+  .qans{font-size:12px;font-weight:700;color:#fff;background:var(--gold);padding:3px 8px;border-radius:7px}
+  .qjenis{font-size:11.5px;font-weight:600;background:#eef3f1;border:1px solid #cfe0da;color:var(--accent-deep);padding:3px 9px;border-radius:7px}
+  .qtag{font-size:11.5px;background:var(--paper);border:1px solid var(--line);padding:3px 9px;border-radius:999px;color:var(--ink-soft)}
+  .qactions{margin-left:auto;display:flex;gap:6px}
+  .qsoal{font-size:14px;line-height:1.55;color:var(--ink);white-space:pre-wrap}
+  .empty{text-align:center;padding:50px 20px;color:var(--ink-soft)}
+  .empty .big{font-family:'Fraunces',serif;font-size:19px;color:var(--ink);margin-bottom:6px}
+  .gen-meta{font-size:13.5px;color:var(--ink-soft);margin:4px 0 16px}
+  .gen-meta b{color:var(--accent);font-weight:700}
+  .out-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+  #outputPreview{background:#fff;border:1px solid var(--line);border-radius:12px;padding:34px 38px;min-height:120px;box-shadow:var(--shadow)}
+  #outputPreview:empty::before{content:"Hasil generate muncul di sini.";color:var(--ink-soft);font-size:14px}
+  #outputPreview h2{font-family:'Fraunces',serif;font-weight:700;font-size:25px;margin:30px 0 16px;padding-bottom:8px;border-bottom:2px solid var(--ink)}
+  #outputPreview h2:first-child{margin-top:0}
+  #outputPreview h3{font-family:'Fraunces',serif;font-weight:600;font-size:17px;margin:22px 0 9px;color:var(--accent-deep)}
+  #outputPreview p{font-size:14.5px;line-height:1.6;margin:4px 0;color:#26221c}
+  #outputPreview p strong{color:var(--ink)}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);font-size:14px;font-weight:500;padding:12px 20px;border-radius:11px;box-shadow:0 12px 30px -8px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:all .3s;z-index:50}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.err{background:var(--rust)}
+  .hint{font-size:12px;color:var(--ink-soft);margin-top:6px}
+  .grow{flex:1}
+  .overlay{position:fixed;inset:0;background:rgba(244,240,231,.85);backdrop-filter:blur(3px);display:grid;place-items:center;z-index:60;font-weight:600;color:var(--ink-soft)}
+  .spinner{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media(max-width:640px){.row{grid-template-columns:1fr}#outputPreview{padding:22px 18px}.brand h1{font-size:28px}}
+  @media print{
+    body{background:#fff;background-image:none}
+    body *{visibility:hidden}
+    #outputPreview,#outputPreview *{visibility:visible}
+    #outputPreview{position:absolute;inset:0 auto auto 0;width:100%;border:none;box-shadow:none;padding:0}
+    @page{margin:18mm}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Sheetly · <span>Bank Soal</span></h1>
+      <p>Input sekali, rakit jadi produk apa pun. Data tersimpan permanen di Supabase.</p>
+    </div>
+    <div class="gactions">
+      <button class="btn ghost" onclick="exportJSON()" title="Backup ke file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke-linecap="round" stroke-linejoin="round"/></svg>Export
+      </button>
+      <button class="btn ghost" onclick="document.getElementById('importFile').click()" title="Restore dari file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9m0 0l-4 4m4-4l4 4M5 3h14" stroke-linecap="round" stroke-linejoin="round"/></svg>Import
+      </button>
+      <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importJSON(event)">
+    </div>
+  </header>
+
+  <div class="status" id="statusBar"><span class="dot"></span><span id="statusText">Menghubungkan ke database…</span></div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="add">Tambah Soal</button>
+    <button class="tab" data-tab="bank">Bank Soal <span class="cnt" id="bankCount">0</span></button>
+    <button class="tab" data-tab="gen">Generate</button>
+  </div>
+
+  <!-- TAMBAH SOAL -->
+  <section class="panel active" id="panel-add">
+    <div class="card">
+      <h2 class="sec" id="formTitle">Tambah Soal Baru</h2>
+      <div class="sub" id="formSub">Pilih subtes & jenis, lalu isi soalnya.</div>
+
+      <div class="row">
+        <div class="field">
+          <label class="fl">Subtes</label>
+          <select id="fSubtes" onchange="onSubtesChange()"></select>
+        </div>
+        <div class="field">
+          <label class="fl">Jenis Soal</label>
+          <select id="fJenis"></select>
+        </div>
+        <div class="field">
+          <label class="fl">ID Soal</label>
+          <div style="height:44px;display:flex;align-items:center">
+            <span class="id-preview" id="idPreview">—</span>
+            <span class="editing-flag" id="editingFlag" style="margin-left:10px">● diedit</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="fl">Soal</label>
+        <textarea id="fSoal" placeholder="Tulis pertanyaan di sini…"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="fl">Opsi Jawaban</label>
+        <div class="opt-grid" id="optGrid"></div>
+        <div class="hint">Kosongkan opsi yang tidak dipakai (misal kalau cuma A–D).</div>
+      </div>
+
+      <div class="field">
+        <label class="fl">Jawaban Benar</label>
+        <div class="ans-pick" id="ansPick"></div>
+      </div>
+
+      <div class="field">
+        <label class="fl">Pembahasan Singkat</label>
+        <textarea id="fPbSingkat" placeholder="Inti jawaban / cara cepat…"></textarea>
+      </div>
+      <div class="field">
+        <label class="fl">Pembahasan Detail</label>
+        <textarea id="fPbDetail" placeholder="Penjelasan lengkap tapi to-the-point…" style="min-height:90px"></textarea>
+      </div>
+
+      <div class="field">
+        <label class="fl">Alokasi Produk</label>
+        <div class="pill-pick" id="alokasiPick"></div>
+        <div class="addtag">
+          <input type="text" id="newTag" placeholder="Tambah alokasi baru, mis. TO-V2, Ebook LR…" onkeydown="if(event.key==='Enter'){event.preventDefault();addNewTag()}">
+          <button class="btn sm" onclick="addNewTag()">+ Tambah</button>
+        </div>
+        <div class="hint">Satu soal boleh masuk beberapa produk sekaligus.</div>
+      </div>
+
+      <div class="form-foot">
+        <button class="btn primary" id="saveBtn" onclick="saveQuestion()">Simpan Soal</button>
+        <button class="btn ghost" id="cancelEditBtn" style="display:none" onclick="resetForm()">Batal Edit</button>
+      </div>
+
+      <details class="mgr">
+        <summary>Kelola jenis soal (untuk subtes yang dipilih di atas)</summary>
+        <div class="chip-list" id="jenisList"></div>
+        <div class="addtag">
+          <input type="text" id="newJenis" placeholder="Mis. Silogisme, Analogi, Sebab-Akibat…" onkeydown="if(event.key==='Enter'){event.preventDefault();addJenis()}">
+          <button class="btn sm" onclick="addJenis()">+ Jenis</button>
+        </div>
+        <div class="hint">Jenis menempel ke subtes yang sedang dipilih di dropdown Subtes di atas.</div>
+      </details>
+
+      <details class="mgr">
+        <summary>Kelola daftar subtes (kalau nanti nambah subtes baru)</summary>
+        <div class="chip-list" id="subtesList"></div>
+        <div class="addtag">
+          <input type="text" id="newSubCode" placeholder="Kode (mis. AR)" style="max-width:130px">
+          <input type="text" id="newSubName" placeholder="Nama (mis. Abstract Reasoning)">
+          <button class="btn sm" onclick="addSubtes()">+ Subtes</button>
+        </div>
+        <div class="hint">Kode dipakai untuk ID soal (AR-001, …). Subtes yang masih punya soal tidak bisa dihapus.</div>
+      </details>
+    </div>
+  </section>
+
+  <!-- BANK SOAL -->
+  <section class="panel" id="panel-bank">
+    <div class="card">
+      <h2 class="sec">Bank Soal</h2>
+      <div class="sub">Semua soal lo, tersimpan di server. Filter, cek, edit, atau hapus.</div>
+      <div class="filterbar">
+        <div class="field"><label class="fl">Subtes</label><select id="filterSubtes" onchange="onFilterSubtesChange();renderBank()"></select></div>
+        <div class="field"><label class="fl">Jenis</label><select id="filterJenis" onchange="renderBank()"></select></div>
+        <div class="field"><label class="fl">Alokasi</label><select id="filterAlokasi" onchange="renderBank()"></select></div>
+        <div class="field grow"><label class="fl">Cari</label><input type="text" id="filterSearch" placeholder="Cari isi soal / ID…" oninput="renderBank()"></div>
+      </div>
+      <div class="qcount" id="qcount"></div>
+      <div id="bankList"></div>
+    </div>
+  </section>
+
+  <!-- GENERATE -->
+  <section class="panel" id="panel-gen">
+    <div class="card">
+      <h2 class="sec">Generate Produk</h2>
+      <div class="sub">Pilih filter, sistem merakit soal otomatis & menomori ulang dari 1.</div>
+      <div class="filterbar">
+        <div class="field"><label class="fl">Subtes</label><select id="genSubtes" onchange="onGenSubtesChange()"><option value="">Semua subtes</option></select></div>
+        <div class="field"><label class="fl">Jenis</label><select id="genJenis"><option value="">Semua jenis</option></select></div>
+        <div class="field"><label class="fl">Alokasi</label><select id="genAlokasi"><option value="">Semua alokasi</option></select></div>
+        <div class="field" style="align-self:flex-end"><button class="btn primary" onclick="generate()">Generate</button></div>
+      </div>
+      <div class="gen-meta" id="genMeta"></div>
+      <div class="out-actions" id="outActions" style="display:none">
+        <button class="btn primary" onclick="copyToNotion()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10" stroke-linecap="round"/></svg>Copy ke Notion
+        </button>
+        <button class="btn" onclick="window.print()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2M6 14h12v7H6z" stroke-linecap="round" stroke-linejoin="round"/></svg>Save sebagai PDF
+        </button>
+      </div>
+      <div id="outputPreview"></div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="overlay" id="overlay"><div style="text-align:center"><div class="spinner"></div><span id="overlayText">Memuat data…</span></div></div>
+
+<script>
+/* ===== KONFIGURASI SUPABASE (publishable key = aman untuk browser) ===== */
+const SUPABASE_URL = "https://qhftmgdgomvsrpvuifui.supabase.co";
+const SUPABASE_KEY = "sb_publishable_fimvm22oz9a1NGaDh4O7-g_nbgsWxSV";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const LETTERS=['A','B','C','D','E'];
+let DB={subtes:[],jenis:[],tags:[],questions:[]};
+let editingId=null, selectedAns='A', selectedTags=[];
+let lastOutputHTML='', lastOutputPlain='';
+
+/* ---------- UTIL ---------- */
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function toast(msg,err){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(err?' err':'');clearTimeout(t._t);t._t=setTimeout(()=>t.className='toast',2800);}
+function overlay(on,txt){const o=document.getElementById('overlay');if(txt)document.getElementById('overlayText').textContent=txt;o.style.display=on?'grid':'none';}
+function setStatus(state,txt){const b=document.getElementById('statusBar');b.className='status '+state;document.getElementById('statusText').innerHTML=txt;}
+function opsiOf(q){return {A:q.opsi_a,B:q.opsi_b,C:q.opsi_c,D:q.opsi_d,E:q.opsi_e};}
+function nextId(code){let max=0;DB.questions.forEach(q=>{if(q.subtes===code){const n=parseInt((q.id.split('-')[1]||'0'),10);if(n>max)max=n;}});return code+'-'+String(max+1).padStart(3,'0');}
+
+/* ---------- LOAD ALL ---------- */
+async function loadAll(){
+  overlay(true,'Memuat data dari server…');
+  setStatus('','Menghubungkan…');
+  try{
+    const [qs,st,jn,tg]=await Promise.all([
+      sb.from('questions').select('*'),
+      sb.from('subtes').select('*'),
+      sb.from('jenis').select('*'),
+      sb.from('tags').select('*')
+    ]);
+    if(qs.error||st.error||jn.error||tg.error) throw (qs.error||st.error||jn.error||tg.error);
+    DB.questions=qs.data||[];
+    DB.subtes=(st.data||[]).sort((a,b)=>a.code<b.code?-1:1);
+    DB.jenis=jn.data||[];
+    DB.tags=(tg.data||[]).map(t=>t.name);
+    setStatus('ok','<span class="dot"></span>Terhubung ke database · '+DB.questions.length+' soal');
+    initUI(); renderBank();
+  }catch(e){
+    console.error(e);
+    setStatus('err','<span class="dot"></span>Gagal terhubung. <span class="retry" onclick="loadAll()">Coba lagi</span>');
+    toast('Gagal memuat data. Cek koneksi / kunci API.',true);
+  }finally{overlay(false);}
+}
+
+/* ---------- FORM UI ---------- */
+function buildSubtesSelect(){
+  const sel=document.getElementById('fSubtes');const cur=sel.value;
+  sel.innerHTML=DB.subtes.map(s=>`<option value="${s.code}">${s.code} · ${esc(s.name)}</option>`).join('');
+  if(cur)sel.value=cur;
+  buildJenisSelect(); buildJenisList(); updateIdPreview();
+}
+function buildJenisSelect(){
+  const code=document.getElementById('fSubtes').value;
+  const sel=document.getElementById('fJenis');const cur=sel.value;
+  const list=DB.jenis.filter(j=>j.subtes===code);
+  sel.innerHTML='<option value="">(tanpa jenis)</option>'+list.map(j=>`<option value="${esc(j.name)}">${esc(j.name)}</option>`).join('');
+  if(cur&&list.some(j=>j.name===cur))sel.value=cur;
+}
+function buildOptGrid(){document.getElementById('optGrid').innerHTML=LETTERS.map(L=>`<div class="opt-line"><span class="opt-letter">${L}</span><input type="text" id="opt${L}" placeholder="Opsi ${L}"></div>`).join('');}
+function buildAnsPick(){document.getElementById('ansPick').innerHTML=LETTERS.map(L=>`<div class="ans-chip${L===selectedAns?' on':''}" onclick="pickAns('${L}')">${L}</div>`).join('');}
+function pickAns(L){selectedAns=L;buildAnsPick();}
+function buildAlokasiPick(){
+  document.getElementById('alokasiPick').innerHTML=DB.tags.map(t=>{
+    const on=selectedTags.includes(t);
+    return `<span class="pill${on?' on':''}" onclick="toggleTag('${t.replace(/'/g,"\\'")}')">${esc(t)}<span class="x" onclick="event.stopPropagation();deleteTag('${t.replace(/'/g,"\\'")}')">×</span></span>`;
+  }).join('')||'<span class="hint">Belum ada alokasi. Tambah di bawah.</span>';
+}
+function toggleTag(t){if(selectedTags.includes(t))selectedTags=selectedTags.filter(x=>x!==t);else selectedTags.push(t);buildAlokasiPick();}
+function updateIdPreview(){const code=document.getElementById('fSubtes').value;const el=document.getElementById('idPreview');if(editingId){el.textContent=editingId;el.className='id-preview edit';}else{el.textContent=nextId(code);el.className='id-preview';}}
+function onSubtesChange(){buildJenisSelect();buildJenisList();updateIdPreview();}
+
+/* ---------- JENIS MGR ---------- */
+function buildJenisList(){
+  const code=document.getElementById('fSubtes').value;
+  const list=DB.jenis.filter(j=>j.subtes===code);
+  document.getElementById('jenisList').innerHTML=list.length
+    ? list.map(j=>`<span class="chip-tag">${esc(j.name)}<span class="x" onclick="deleteJenis(${j.id})">×</span></span>`).join('')
+    : '<span class="hint">Belum ada jenis untuk subtes ini.</span>';
+}
+async function addJenis(){
+  const code=document.getElementById('fSubtes').value;
+  const name=document.getElementById('newJenis').value.trim();
+  if(!name)return;
+  if(DB.jenis.some(j=>j.subtes===code&&j.name.toLowerCase()===name.toLowerCase())){toast('Jenis itu sudah ada.',true);return;}
+  const {data,error}=await sb.from('jenis').insert({subtes:code,name}).select();
+  if(error){toast('Gagal menambah jenis.',true);return;}
+  DB.jenis.push(data[0]);document.getElementById('newJenis').value='';
+  buildJenisList();buildJenisSelect();refreshJenisFilters();toast('Jenis ditambahkan.');
+}
+async function deleteJenis(id){
+  const j=DB.jenis.find(x=>x.id===id);if(!j)return;
+  if(!confirm(`Hapus jenis "${j.name}"? (soal yang sudah pakai jenis ini tidak terhapus, tag jenisnya tetap tertulis)`))return;
+  const {error}=await sb.from('jenis').delete().eq('id',id);
+  if(error){toast('Gagal menghapus.',true);return;}
+  DB.jenis=DB.jenis.filter(x=>x.id!==id);buildJenisList();buildJenisSelect();refreshJenisFilters();
+}
+
+/* ---------- SUBTES MGR ---------- */
+function buildSubtesList(){
+  document.getElementById('subtesList').innerHTML=DB.subtes.map(s=>`<span class="chip-tag"><code>${s.code}</code> ${esc(s.name)}<span class="x" onclick="deleteSubtes('${s.code}')">×</span></span>`).join('');
+}
+async function addSubtes(){
+  const code=document.getElementById('newSubCode').value.trim().toUpperCase();
+  const name=document.getElementById('newSubName').value.trim();
+  if(!code||!name){toast('Isi kode & nama subtes.',true);return;}
+  if(DB.subtes.some(s=>s.code===code)){toast('Kode subtes sudah ada.',true);return;}
+  const {error}=await sb.from('subtes').insert({code,name});
+  if(error){toast('Gagal menambah subtes.',true);return;}
+  DB.subtes.push({code,name});DB.subtes.sort((a,b)=>a.code<b.code?-1:1);
+  document.getElementById('newSubCode').value='';document.getElementById('newSubName').value='';
+  buildSubtesList();buildSubtesSelect();refreshSubtesDropdowns();toast('Subtes '+code+' ditambahkan.');
+}
+async function deleteSubtes(code){
+  if(DB.questions.some(q=>q.subtes===code)){toast('Tidak bisa dihapus — masih ada soal di subtes ini.',true);return;}
+  const {error}=await sb.from('subtes').delete().eq('code',code);
+  if(error){toast('Gagal menghapus.',true);return;}
+  DB.subtes=DB.subtes.filter(s=>s.code!==code);buildSubtesList();buildSubtesSelect();refreshSubtesDropdowns();
+}
+
+/* ---------- TAGS ---------- */
+async function addNewTag(){
+  const inp=document.getElementById('newTag');const v=inp.value.trim();if(!v)return;
+  if(!DB.tags.includes(v)){
+    const {error}=await sb.from('tags').insert({name:v});
+    if(error){toast('Gagal menambah alokasi.',true);return;}
+    DB.tags.push(v);
+  }
+  if(!selectedTags.includes(v))selectedTags.push(v);
+  inp.value='';buildAlokasiPick();refreshTagDropdowns();
+}
+async function deleteTag(t){
+  const used=DB.questions.filter(q=>(q.alokasi||[]).includes(t));
+  if(used.length){if(!confirm(`Tag "${t}" dipakai ${used.length} soal. Hapus tag dari daftar & lepas dari soal-soal itu?`))return;
+    for(const q of used){const na=q.alokasi.filter(x=>x!==t);await sb.from('questions').update({alokasi:na}).eq('id',q.id);q.alokasi=na;}}
+  const {error}=await sb.from('tags').delete().eq('name',t);
+  if(error){toast('Gagal menghapus.',true);return;}
+  DB.tags=DB.tags.filter(x=>x!==t);selectedTags=selectedTags.filter(x=>x!==t);
+  buildAlokasiPick();refreshTagDropdowns();renderBank();
+}
+
+/* ---------- SAVE / EDIT / DELETE ---------- */
+async function saveQuestion(){
+  const subtes=document.getElementById('fSubtes').value;
+  const soal=document.getElementById('fSoal').value.trim();
+  if(!soal){toast('Soal belum diisi.',true);return;}
+  const opsi={};LETTERS.forEach(L=>opsi[L]=document.getElementById('opt'+L).value.trim());
+  if(!opsi[selectedAns]){toast('Opsi jawaban benar ('+selectedAns+') masih kosong.',true);return;}
+  const obj={
+    subtes, jenis:document.getElementById('fJenis').value||null, soal,
+    opsi_a:opsi.A||null,opsi_b:opsi.B||null,opsi_c:opsi.C||null,opsi_d:opsi.D||null,opsi_e:opsi.E||null,
+    jawaban:selectedAns,
+    pb_singkat:document.getElementById('fPbSingkat').value.trim()||null,
+    pb_detail:document.getElementById('fPbDetail').value.trim()||null,
+    alokasi:[...selectedTags]
+  };
+  const btn=document.getElementById('saveBtn');btn.disabled=true;btn.textContent='Menyimpan…';
+  try{
+    if(editingId){
+      const {error}=await sb.from('questions').update(obj).eq('id',editingId);if(error)throw error;
+      const i=DB.questions.findIndex(q=>q.id===editingId);DB.questions[i]={...DB.questions[i],...obj,id:editingId};
+      toast('Soal '+editingId+' diperbarui.');
+    }else{
+      obj.id=nextId(subtes);
+      const {error}=await sb.from('questions').insert(obj);if(error)throw error;
+      DB.questions.push(obj);toast('Tersimpan: '+obj.id);
+    }
+    resetForm();renderBank();
+    setStatus('ok','<span class="dot"></span>Terhubung ke database · '+DB.questions.length+' soal');
+  }catch(e){console.error(e);toast('Gagal menyimpan ke server.',true);}
+  finally{btn.disabled=false;btn.textContent='Simpan Soal';}
+}
+function resetForm(){
+  editingId=null;selectedAns='A';selectedTags=[];
+  document.getElementById('fSoal').value='';document.getElementById('fPbSingkat').value='';document.getElementById('fPbDetail').value='';
+  LETTERS.forEach(L=>document.getElementById('opt'+L).value='');
+  document.getElementById('fJenis').value='';
+  document.getElementById('formTitle').textContent='Tambah Soal Baru';
+  document.getElementById('formSub').textContent='Pilih subtes & jenis, lalu isi soalnya.';
+  document.getElementById('editingFlag').style.display='none';
+  document.getElementById('cancelEditBtn').style.display='none';
+  buildAnsPick();buildAlokasiPick();updateIdPreview();
+}
+function editQuestion(id){
+  const q=DB.questions.find(x=>x.id===id);if(!q)return;
+  editingId=id;selectedAns=q.jawaban||'A';selectedTags=[...(q.alokasi||[])];
+  document.getElementById('fSubtes').value=q.subtes;buildJenisSelect();buildJenisList();
+  document.getElementById('fJenis').value=q.jenis||'';
+  document.getElementById('fSoal').value=q.soal;
+  const o=opsiOf(q);LETTERS.forEach(L=>document.getElementById('opt'+L).value=o[L]||'');
+  document.getElementById('fPbSingkat').value=q.pb_singkat||'';
+  document.getElementById('fPbDetail').value=q.pb_detail||'';
+  document.getElementById('formTitle').textContent='Edit Soal '+id;
+  document.getElementById('formSub').textContent='Subtes tidak diganti agar ID tetap konsisten.';
+  document.getElementById('editingFlag').style.display='inline';
+  document.getElementById('cancelEditBtn').style.display='inline-flex';
+  buildAnsPick();buildAlokasiPick();updateIdPreview();
+  switchTab('add');window.scrollTo({top:0,behavior:'smooth'});
+}
+async function deleteQuestion(id){
+  if(!confirm('Hapus soal '+id+' permanen dari server?'))return;
+  const {error}=await sb.from('questions').delete().eq('id',id);
+  if(error){toast('Gagal menghapus.',true);return;}
+  DB.questions=DB.questions.filter(q=>q.id!==id);
+  renderBank();if(editingId===id)resetForm();toast('Soal '+id+' dihapus.');
+  setStatus('ok','<span class="dot"></span>Terhubung ke database · '+DB.questions.length+' soal');
+}
+
+/* ---------- DROPDOWNS ---------- */
+function refreshSubtesDropdowns(){
+  ['filterSubtes','genSubtes'].forEach(id=>{
+    const sel=document.getElementById(id);const cur=sel.value;
+    sel.innerHTML='<option value="">Semua subtes</option>'+DB.subtes.map(s=>`<option value="${s.code}">${s.code} · ${esc(s.name)}</option>`).join('');
+    sel.value=cur;
+  });
+  refreshJenisFilters();
+}
+function refreshTagDropdowns(){
+  ['filterAlokasi','genAlokasi'].forEach(id=>{
+    const sel=document.getElementById(id);const cur=sel.value;
+    sel.innerHTML='<option value="">Semua alokasi</option>'+DB.tags.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    sel.value=cur;
+  });
+}
+function jenisFor(code){
+  const list = code ? DB.jenis.filter(j=>j.subtes===code) : DB.jenis;
+  const names=[...new Set(list.map(j=>j.name))];
+  return names;
+}
+function refreshJenisFilters(){
+  onFilterSubtesChange(); onGenSubtesChange();
+}
+function onFilterSubtesChange(){
+  const code=document.getElementById('filterSubtes').value;
+  const sel=document.getElementById('filterJenis');const cur=sel.value;
+  sel.innerHTML='<option value="">Semua jenis</option>'+jenisFor(code).map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  if([...sel.options].some(o=>o.value===cur))sel.value=cur;
+}
+function onGenSubtesChange(){
+  const code=document.getElementById('genSubtes').value;
+  const sel=document.getElementById('genJenis');const cur=sel.value;
+  sel.innerHTML='<option value="">Semua jenis</option>'+jenisFor(code).map(n=>`<option value="${esc(n)}">${esc(n)}</option>`).join('');
+  if([...sel.options].some(o=>o.value===cur))sel.value=cur;
+}
+
+/* ---------- BANK ---------- */
+function renderBank(){
+  document.getElementById('bankCount').textContent=DB.questions.length;
+  const fS=document.getElementById('filterSubtes').value;
+  const fJ=document.getElementById('filterJenis').value;
+  const fA=document.getElementById('filterAlokasi').value;
+  const fSearch=document.getElementById('filterSearch').value.toLowerCase();
+  let list=DB.questions.filter(q=>
+    (!fS||q.subtes===fS)&&(!fJ||q.jenis===fJ)&&(!fA||(q.alokasi||[]).includes(fA))&&
+    (!fSearch||q.soal.toLowerCase().includes(fSearch)||q.id.toLowerCase().includes(fSearch)));
+  list.sort((a,b)=>a.id<b.id?-1:1);
+  document.getElementById('qcount').textContent=`${list.length} soal ditampilkan · total ${DB.questions.length} di bank`;
+  const c=document.getElementById('bankList');
+  if(!DB.questions.length){c.innerHTML=`<div class="empty"><div class="big">Bank soal masih kosong</div>Tambah soal pertama lo di tab “Tambah Soal”.</div>`;return;}
+  if(!list.length){c.innerHTML=`<div class="empty"><div class="big">Tidak ada hasil</div>Coba ganti filter / kata kunci.</div>`;return;}
+  c.innerHTML=list.map(q=>{
+    const tags=(q.alokasi||[]).map(t=>`<span class="qtag">${esc(t)}</span>`).join('');
+    const jenis=q.jenis?`<span class="qjenis">${esc(q.jenis)}</span>`:'';
+    const preview=q.soal.length>180?esc(q.soal.slice(0,180))+'…':esc(q.soal);
+    return `<div class="qitem"><div class="qhead">
+      <span class="qid">${q.id}</span>${jenis}
+      <span class="qans">Jawaban ${q.jawaban||'-'}</span>
+      ${tags||'<span class="qtag" style="color:var(--rust)">belum dialokasikan</span>'}
+      <span class="qactions">
+        <button class="btn sm" onclick="editQuestion('${q.id}')">Edit</button>
+        <button class="btn sm danger" onclick="deleteQuestion('${q.id}')">Hapus</button>
+      </span></div><div class="qsoal">${preview}</div></div>`;
+  }).join('');
+}
+
+/* ---------- GENERATE ---------- */
+function generate(){
+  const gS=document.getElementById('genSubtes').value;
+  const gJ=document.getElementById('genJenis').value;
+  const gA=document.getElementById('genAlokasi').value;
+  let list=DB.questions.filter(q=>(!gS||q.subtes===gS)&&(!gJ||q.jenis===gJ)&&(!gA||(q.alokasi||[]).includes(gA)));
+  list.sort((a,b)=>a.id<b.id?-1:1);
+  const meta=document.getElementById('genMeta');
+  if(!list.length){meta.innerHTML='Tidak ada soal yang cocok dengan filter ini.';document.getElementById('outputPreview').innerHTML='';document.getElementById('outActions').style.display='none';lastOutputHTML=lastOutputPlain='';return;}
+  meta.innerHTML=`Merakit <b>${list.length}</b> soal. Dinomori ulang 1–${list.length}.`;
+  let html='<h2>Daftar Soal</h2>', plain='Daftar Soal\n\n';
+  list.forEach((q,i)=>{const n=i+1;const o=opsiOf(q);
+    html+=`<h3>Soal ${n}</h3><p>${esc(q.soal)}</p>`;plain+=`Soal ${n}\n${q.soal}\n`;
+    LETTERS.forEach(L=>{if(o[L]){html+=`<p>${L}. ${esc(o[L])}</p>`;plain+=`${L}. ${o[L]}\n`;}});plain+='\n';});
+  html+='<h2>Kunci Jawaban</h2>';plain+='Kunci Jawaban\n\n';
+  list.forEach((q,i)=>{const n=i+1;const o=opsiOf(q);
+    html+=`<h3>Soal ${n}</h3><p>${esc(q.soal)}</p>`;plain+=`Soal ${n}\n${q.soal}\n`;
+    LETTERS.forEach(L=>{if(o[L]){const c=L===q.jawaban;html+=`<p>${c?'<strong>':''}${L}. ${esc(o[L])}${c?'</strong>':''}</p>`;plain+=`${L}. ${o[L]}${c?'  ✓':''}\n`;}});
+    html+=`<p><strong>Jawaban: ${q.jawaban||'-'}</strong></p>`;plain+=`Jawaban: ${q.jawaban||'-'}\n`;
+    html+=`<p><strong>Pembahasan</strong></p>`;plain+=`Pembahasan\n`;
+    if(q.pb_singkat){html+=`<p>${esc(q.pb_singkat)}</p>`;plain+=`${q.pb_singkat}\n`;}
+    if(q.pb_detail){html+=`<p>${esc(q.pb_detail)}</p>`;plain+=`${q.pb_detail}\n`;}plain+='\n';});
+  lastOutputHTML=html;lastOutputPlain=plain;
+  document.getElementById('outputPreview').innerHTML=html;
+  document.getElementById('outActions').style.display='flex';
+}
+
+/* ---------- COPY ---------- */
+async function copyToNotion(){
+  if(!lastOutputHTML){toast('Generate dulu sebelum copy.',true);return;}
+  try{
+    await navigator.clipboard.write([new ClipboardItem({'text/html':new Blob([lastOutputHTML],{type:'text/html'}),'text/plain':new Blob([lastOutputPlain],{type:'text/plain'})})]);
+    toast('Tersalin! Buka Notion → Ctrl/Cmd+V.');
+  }catch(e){
+    try{const div=document.createElement('div');div.contentEditable=true;div.style.cssText='position:fixed;left:-9999px';div.innerHTML=lastOutputHTML;document.body.appendChild(div);
+      const r=document.createRange();r.selectNodeContents(div);const sel=window.getSelection();sel.removeAllRanges();sel.addRange(r);document.execCommand('copy');sel.removeAllRanges();document.body.removeChild(div);
+      toast('Tersalin! Paste di Notion.');}catch(e2){toast('Browser memblok copy.',true);}
+  }
+}
+
+/* ---------- EXPORT / IMPORT ---------- */
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download=`sheetly-banksoal-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(url);
+  toast('Backup ter-download.');
+}
+async function importJSON(ev){
+  const file=ev.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=async()=>{
+    try{
+      const d=JSON.parse(reader.result);
+      if(!d.questions)throw new Error('format');
+      if(!confirm(`Import ${d.questions.length} soal ke server? Data dengan ID sama akan ditimpa.`))return;
+      overlay(true,'Mengimpor ke server…');
+      if(d.subtes?.length)await sb.from('subtes').upsert(d.subtes,{onConflict:'code'});
+      if(d.tags?.length)await sb.from('tags').upsert(d.tags.map(n=>({name:n})),{onConflict:'name'});
+      for(const j of (d.jenis||[])){if(!DB.jenis.some(x=>x.subtes===j.subtes&&x.name===j.name))await sb.from('jenis').insert({subtes:j.subtes,name:j.name});}
+      const clean=d.questions.map(({created_at,...r})=>r);
+      if(clean.length)await sb.from('questions').upsert(clean,{onConflict:'id'});
+      await loadAll();toast('Import selesai.');
+    }catch(e){console.error(e);toast('File tidak valid / gagal import.',true);}
+    finally{overlay(false);}
+  };
+  reader.readAsText(file);ev.target.value='';
+}
+
+/* ---------- TABS ---------- */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+name));
+  if(name==='bank')renderBank();
+}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
+
+/* ---------- INIT ---------- */
+function initUI(){
+  buildSubtesSelect();buildOptGrid();buildAnsPick();buildAlokasiPick();
+  buildSubtesList();buildJenisList();refreshSubtesDropdowns();refreshTagDropdowns();
+  document.getElementById('bankCount').textContent=DB.questions.length;
+}
+loadAll();
+</script>
+</body>
+</html>
