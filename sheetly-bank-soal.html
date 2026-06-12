@@ -328,6 +328,15 @@ function setStatus(state,txt){const b=document.getElementById('statusBar');b.cla
 function opsiOf(q){return {A:q.opsi_a,B:q.opsi_b,C:q.opsi_c,D:q.opsi_d,E:q.opsi_e};}
 function qById(id){return DB.questions.find(q=>q.id===id);}
 function nextId(code){let max=0;DB.questions.forEach(q=>{if(q.subtes===code){const n=parseInt((q.id.split('-')[1]||'0'),10);if(n>max)max=n;}});return code+'-'+String(max+1).padStart(3,'0');}
+async function nextIdSafe(code){
+  try{
+    const {data}=await sb.from('questions').select('id').like('id',code+'-%').order('id',{ascending:false}).limit(1);
+    if(data&&data.length){const n=parseInt((data[0].id.split('-')[1]||'0'),10);const newId=code+'-'+String(n+1).padStart(3,'0');
+      // sync ke memori lokal juga biar preview ID ikut akurat
+      return newId;}
+  }catch(e){console.warn('nextIdSafe fallback ke lokal',e);}
+  return nextId(code);
+}
 function productsOf(soalId){return DB.products.filter(p=>(p.soal_ids||[]).includes(soalId));}
 function refreshCounts(){document.getElementById('masterCount').textContent=DB.questions.length;document.getElementById('ebookCount').textContent=DB.products.length;}
 
@@ -384,7 +393,16 @@ async function saveQuestion(){
   const btn=document.getElementById('saveBtn');btn.disabled=true;btn.textContent='Menyimpan…';
   try{
     if(editingId){const {error}=await sb.from('questions').update(obj).eq('id',editingId);if(error)throw error;const i=DB.questions.findIndex(q=>q.id===editingId);DB.questions[i]={...DB.questions[i],...obj,id:editingId};toast('Soal '+editingId+' diperbarui.');}
-    else{obj.id=nextId(subtes);const {error}=await sb.from('questions').insert(obj);if(error)throw error;DB.questions.push(obj);toast('Tersimpan: '+obj.id);}
+    else{
+      obj.id=await nextIdSafe(subtes);
+      // upsert (insert + update kalau id sudah ada) biar aman dari edge case duplikat
+      const {error}=await sb.from('questions').upsert(obj,{onConflict:'id'});
+      if(error)throw error;
+      // update memori lokal: kalau id udah ada (edge case), update; kalau baru, push
+      const existing=DB.questions.findIndex(q=>q.id===obj.id);
+      if(existing>=0)DB.questions[existing]=obj;else DB.questions.push(obj);
+      toast('Tersimpan: '+obj.id);
+    }
     resetForm();refreshCounts();
     setStatus('ok','<span class="dot"></span>Terhubung · '+DB.questions.length+' soal · '+DB.products.length+' ebook');
   }catch(e){console.error(e);toast('Gagal menyimpan ke server.',true);}
