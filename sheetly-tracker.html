@@ -1,0 +1,2331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sheetly Social Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     DESIGN TOKENS
+     ============================================================ */
+  :root {
+    --bg: #F8F9FA;
+    --surface: #FFFFFF;
+    --primary: #2563EB;
+    --primary-dark: #1D4ED8;
+    --secondary: #10B981;
+    --danger: #EF4444;
+    --warning: #F59E0B;
+    --text: #111827;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --gray: #9CA3AF;
+
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.08);
+    --radius-card: 8px;
+    --radius-input: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============================================================
+     LAYOUT
+     ============================================================ */
+  .app { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 16px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px 24px;
+    font-weight: 700;
+    font-size: 17px;
+  }
+  .brand .logo {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 16px;
+  }
+  .brand small { display: block; font-weight: 500; font-size: 11px; color: var(--text-secondary); }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-input);
+    font: inherit;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    text-align: left;
+    margin-bottom: 2px;
+    transition: background .12s, color .12s;
+  }
+  .nav-item:hover { background: var(--bg); color: var(--text); }
+  .nav-item.active { background: #EFF4FF; color: var(--primary); font-weight: 600; }
+  .nav-item .ico { font-size: 16px; width: 20px; text-align: center; }
+
+  .main {
+    flex: 1;
+    min-width: 0;
+    padding: 28px 32px;
+    max-width: 1280px;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .page-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+  }
+  .page-head h1 { font-size: 22px; font-weight: 700; }
+  .page-head p { color: var(--text-secondary); margin-top: 2px; }
+
+  /* ============================================================
+     CARDS / GENERIC
+     ============================================================ */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: 20px;
+  }
+  .card + .card { margin-top: 16px; }
+
+  .placeholder {
+    text-align: center;
+    padding: 64px 24px;
+    color: var(--text-secondary);
+  }
+  .placeholder .big { font-size: 40px; margin-bottom: 12px; }
+
+  /* ============================================================
+     BUTTONS
+     ============================================================ */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-input);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit; font-weight: 600;
+    cursor: pointer;
+    transition: background .12s, border-color .12s, opacity .12s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--bg); }
+  .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-secondary { background: var(--secondary); border-color: var(--secondary); color: #fff; }
+  .btn-secondary:hover { opacity: .92; background: var(--secondary); }
+  .btn-danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .btn-danger:hover { opacity: .92; background: var(--danger); }
+  .btn-ghost { border-color: transparent; background: transparent; padding: 6px 10px; }
+  .btn-ghost:hover { background: var(--bg); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  /* ============================================================
+     FORM CONTROLS
+     ============================================================ */
+  label.field { display: block; font-weight: 500; }
+  label.field > span { display: block; margin-bottom: 5px; font-size: 12px; color: var(--text-secondary); font-weight: 600; }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-input);
+    font: inherit;
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+    transition: border-color .12s, box-shadow .12s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+  }
+  textarea { resize: vertical; min-height: 64px; }
+  input[readonly], input.readonly { background: var(--bg); color: var(--text-secondary); }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+  .col-2 { grid-column: span 2; }
+  .col-4 { grid-column: span 4; }
+
+  /* ============================================================
+     TOOLBAR / FILTERS
+     ============================================================ */
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
+    margin-bottom: 16px;
+  }
+  .toolbar .field { min-width: 130px; }
+  .toolbar .search { flex: 1; min-width: 220px; }
+
+  /* ============================================================
+     TABLE
+     ============================================================ */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius-card); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left;
+    padding: 11px 12px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    position: sticky; top: 0;
+  }
+  thead th .arrow { color: var(--primary); font-size: 11px; }
+  tbody td { padding: 11px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tbody tr.data-row { cursor: pointer; }
+  tbody tr.data-row:hover { background: #FAFBFC; }
+  tbody tr.detail-row > td { background: #FAFBFC; padding: 0; }
+  .empty-state { text-align: center; padding: 48px; color: var(--text-secondary); }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+  }
+  .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 6px;
+    background: var(--bg); border: 1px solid var(--border);
+    font-size: 11px; font-weight: 600; color: var(--text-secondary);
+  }
+
+  .score-cell { display: flex; align-items: center; gap: 8px; }
+  .score-bar { width: 44px; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+  .score-bar > i { display: block; height: 100%; border-radius: 3px; }
+
+  /* detail panel */
+  .detail-panel { padding: 16px; }
+  .detail-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 18px; }
+  .detail-grid .item { font-size: 12px; }
+  .detail-grid .item .k { color: var(--text-secondary); font-weight: 600; text-transform: uppercase; font-size: 10px; letter-spacing: .03em; }
+  .detail-grid .item .v { margin-top: 2px; font-size: 13px; word-break: break-word; }
+  .detail-actions { margin-top: 14px; display: flex; gap: 8px; }
+
+  .pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; gap: 12px; flex-wrap: wrap; }
+  .pagination .pages { display: flex; gap: 4px; }
+  .page-btn { min-width: 32px; padding: 6px 8px; }
+  .page-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .muted { color: var(--text-secondary); font-size: 12px; }
+
+  /* ============================================================
+     MODAL
+     ============================================================ */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(17,24,39,.45);
+    display: none; align-items: flex-start; justify-content: center;
+    padding: 32px 16px; z-index: 100; overflow-y: auto;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius-card);
+    width: 100%; max-width: 860px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.25);
+  }
+  .modal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 22px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--surface); border-radius: var(--radius-card) var(--radius-card) 0 0;
+  }
+  .modal-head h2 { font-size: 17px; }
+  .modal-body { padding: 22px; }
+  .modal-foot {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 16px 22px; border-top: 1px solid var(--border);
+    position: sticky; bottom: 0; background: var(--surface);
+  }
+  .close-x { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--text-secondary); line-height: 1; }
+
+  .score-preview { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+  .score-preview .chip { display: flex; flex-direction: column; gap: 2px; }
+  .score-preview .chip .k { font-size: 10px; text-transform: uppercase; color: var(--text-secondary); font-weight: 600; }
+  .score-preview .chip .v { font-size: 18px; font-weight: 700; }
+
+  .section-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); margin: 22px 0 10px; }
+  .section-label:first-child { margin-top: 0; }
+
+  /* ============================================================
+     SETTINGS
+     ============================================================ */
+  .chip-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 8px 6px 12px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 999px; font-weight: 500; font-size: 13px;
+  }
+  .chip button { background: none; border: none; cursor: pointer; color: var(--text-secondary); font-size: 15px; line-height: 1; padding: 0 2px; }
+  .chip button:hover { color: var(--danger); }
+  .add-row { display: flex; gap: 8px; margin-top: 4px; max-width: 420px; }
+
+  /* ============================================================
+     TOAST
+     ============================================================ */
+  .toast-wrap { position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 200; }
+  .toast {
+    background: var(--text); color: #fff;
+    padding: 12px 16px; border-radius: var(--radius-input);
+    box-shadow: 0 8px 24px rgba(0,0,0,.25);
+    font-weight: 500; min-width: 240px;
+    animation: slidein .2s ease;
+  }
+  .toast.success { background: var(--secondary); }
+  .toast.error { background: var(--danger); }
+  .toast.info { background: var(--primary); }
+  @keyframes slidein { from { transform: translateY(12px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  .hint { font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+
+  /* ============================================================
+     ANALYTICS (Dashboard / Patterns / Time)
+     ============================================================ */
+  .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .metric-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 18px;
+  }
+  .metric-card .label { font-size: 11px; color: var(--text-secondary); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+  .metric-card .value { font-size: 26px; font-weight: 700; margin-top: 6px; line-height: 1.2; }
+  .metric-card .sub { margin-top: 8px; font-size: 12px; color: var(--text-secondary); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .delta { font-weight: 700; display: inline-flex; gap: 2px; align-items: center; }
+  .delta.up { color: var(--secondary); }
+  .delta.down { color: var(--danger); }
+  .delta.flat { color: var(--text-secondary); }
+
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .chart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-card); box-shadow: var(--shadow-card); padding: 18px;
+  }
+  .chart-card h3 { font-size: 14px; margin-bottom: 12px; font-weight: 600; }
+  .chart-card.full { grid-column: 1 / -1; }
+  .chart-scroll { overflow-x: auto; }
+
+  .subgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 1100px) { .subgrid { grid-template-columns: 1fr; } .chart-grid { grid-template-columns: 1fr; } .metric-grid { grid-template-columns: repeat(2,1fr); } }
+
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; }
+  .legend .li { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; user-select: none; font-weight: 500; }
+  .legend .sw { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+  .legend .li.off { opacity: .35; text-decoration: line-through; }
+
+  .bench { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #fff; }
+  .row-highlight > td { background: #ECFDF5 !important; }
+
+  .heatmap { border-collapse: separate; border-spacing: 2px; font-family: 'Inter'; }
+  .heatmap th { font-size: 10px; color: var(--text-secondary); font-weight: 600; padding: 2px 4px; text-align: center; }
+  .heatmap td.lbl { font-size: 11px; color: var(--text-secondary); font-weight: 600; padding-right: 8px; text-align: right; white-space: nowrap; }
+  .heatmap .hcell { width: 26px; height: 22px; border-radius: 3px; border: 1px solid var(--border); }
+
+  .insight { background: var(--bg); border: 1px solid var(--border); border-left: 3px solid var(--primary); border-radius: 6px; padding: 12px 14px; margin-bottom: 10px; line-height: 1.5; }
+  .insight:last-child { margin-bottom: 0; }
+  .insight b { color: var(--primary); }
+
+  .bench-bar { height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; margin-top: 4px; }
+  .bench-bar > i { display: block; height: 100%; border-radius: 4px; }
+
+  /* multiselect */
+  .ms { position: relative; }
+  .ms .ms-btn { width: 100%; text-align: left; font-weight: 500; }
+  .ms-pop {
+    position: absolute; z-index: 30; top: 100%; left: 0; margin-top: 4px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-input);
+    box-shadow: 0 8px 24px rgba(0,0,0,.12); padding: 8px; min-width: 200px; max-height: 260px; overflow: auto; display: none;
+  }
+  .ms.open .ms-pop { display: block; }
+  .ms-pop label { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: 4px; cursor: pointer; font-weight: 500; }
+  .ms-pop label:hover { background: var(--bg); }
+  .ms-pop input { width: auto; }
+
+  /* ============================================================
+     SETTINGS MANAGERS
+     ============================================================ */
+  .mgr-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-input);
+    margin-bottom: 8px; background: var(--surface);
+  }
+  .mgr-row .dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(0,0,0,.1); }
+  .mgr-row .nm { flex: 1; font-weight: 600; }
+  .mgr-row .use { font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+  .mgr-row .acts { display: flex; gap: 6px; }
+  .mgr-row input.edit-name { flex: 1; }
+  .mgr-row input[type="color"] { width: 38px; height: 32px; padding: 2px; cursor: pointer; }
+  .add-row input[type="color"] { width: 44px; flex: 0 0 auto; height: 38px; padding: 2px; cursor: pointer; }
+
+  .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .info-item { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-input); padding: 14px; }
+  .info-item .k { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary); font-weight: 700; }
+  .info-item .v { font-size: 20px; font-weight: 700; margin-top: 4px; }
+
+  /* ============================================================
+     EXPORT — Claude panel & prompts
+     ============================================================ */
+  .claude-panel {
+    background: linear-gradient(135deg, #EFF4FF 0%, #ECFDF5 100%);
+    border: 1px solid #DBEAFE; border-radius: var(--radius-card); padding: 22px;
+  }
+  .claude-panel h3 { font-size: 17px; margin-bottom: 6px; }
+  .claude-panel .desc { color: var(--text-secondary); max-width: 620px; margin-bottom: 14px; }
+  .summary-box {
+    width: 100%; min-height: 220px; margin-top: 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px;
+    background: var(--surface); white-space: pre;
+  }
+  .prompt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  @media (max-width: 900px) { .prompt-grid { grid-template-columns: 1fr; } .info-grid { grid-template-columns: 1fr; } }
+  .prompt-card {
+    text-align: left; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-input);
+    background: var(--surface); cursor: pointer; font: inherit; transition: border-color .12s, box-shadow .12s;
+    display: flex; gap: 10px; align-items: flex-start; line-height: 1.45;
+  }
+  .prompt-card:hover { border-color: var(--primary); box-shadow: 0 1px 6px rgba(37,99,235,.12); }
+  .prompt-card .pico { font-size: 16px; }
+
+  /* ============================================================
+     EMPTY STATES + SKELETON LOADERS
+     ============================================================ */
+  .empty-illus { text-align: center; padding: 48px 24px; color: var(--text-secondary); }
+  .empty-illus svg { margin-bottom: 14px; }
+  .empty-illus h4 { font-size: 15px; color: var(--text); margin-bottom: 6px; }
+  .empty-illus p { margin-bottom: 14px; }
+
+  .skeleton { position: relative; overflow: hidden; background: #EEF1F4; border-radius: 8px; }
+  .skeleton::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.65), transparent);
+    transform: translateX(-100%); animation: shimmer 1.1s infinite;
+  }
+  @keyframes shimmer { 100% { transform: translateX(100%); } }
+  .sk-chart { height: 220px; }
+  .sk-card { height: 96px; }
+
+  :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ===================== SIDEBAR ===================== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="logo">S</span>
+      <div>Sheetly<small>Social Tracker</small></div>
+    </div>
+    <nav id="nav">
+      <button class="nav-item active" data-page="log"><span class="ico">📋</span> Content Log</button>
+      <button class="nav-item" data-page="dashboard"><span class="ico">📊</span> Dashboard</button>
+      <button class="nav-item" data-page="patterns"><span class="ico">🔍</span> Pattern Analysis</button>
+      <button class="nav-item" data-page="time"><span class="ico">⏰</span> Time Analysis</button>
+      <button class="nav-item" data-page="export"><span class="ico">📤</span> Export &amp; Analysis</button>
+      <button class="nav-item" data-page="settings"><span class="ico">⚙️</span> Settings</button>
+    </nav>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <main class="main">
+
+    <!-- ============ CONTENT LOG ============ -->
+    <section class="page active" id="page-log">
+      <div class="page-head">
+        <div>
+          <h1>Content Log</h1>
+          <p>Master record of every post, with auto-scored performance.</p>
+        </div>
+        <button class="btn btn-primary" id="btn-add-post">＋ Add Post</button>
+      </div>
+
+      <div class="card">
+        <div class="toolbar">
+          <label class="field search">
+            <span>Search hook / caption</span>
+            <input type="text" id="f-search" placeholder="Type a keyword…" />
+          </label>
+          <label class="field"><span>Platform</span><select id="f-platform"></select></label>
+          <label class="field"><span>Pillar</span><select id="f-pillar"></select></label>
+          <label class="field"><span>Format</span><select id="f-format"></select></label>
+          <label class="field"><span>Tier</span><select id="f-tier"></select></label>
+          <label class="field"><span>From</span><input type="date" id="f-from" /></label>
+          <label class="field"><span>To</span><input type="date" id="f-to" /></label>
+          <button class="btn btn-sm" id="f-reset">Reset</button>
+        </div>
+
+        <div class="table-wrap">
+          <table id="posts-table">
+            <thead>
+              <tr id="posts-head"></tr>
+            </thead>
+            <tbody id="posts-body"></tbody>
+          </table>
+        </div>
+
+        <div class="pagination">
+          <span class="muted" id="result-count"></span>
+          <div class="pages" id="pager"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="page" id="page-dashboard">
+      <div class="page-head"><div><h1>Dashboard</h1><p>Interactive metrics &amp; charts across your content.</p></div></div>
+
+      <div class="card">
+        <div class="toolbar">
+          <label class="field"><span>Date range</span>
+            <select id="dash-range">
+              <option value="7">Last 7 days</option>
+              <option value="30" selected>Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="all">All time</option>
+              <option value="custom">Custom range</option>
+            </select>
+          </label>
+          <label class="field" id="dash-from-w" style="display:none"><span>From</span><input type="date" id="dash-from" /></label>
+          <label class="field" id="dash-to-w" style="display:none"><span>To</span><input type="date" id="dash-to" /></label>
+          <div class="field" style="min-width:160px">
+            <span style="display:block;margin-bottom:5px;font-size:12px;color:var(--text-secondary);font-weight:600">Platform</span>
+            <div class="ms" id="dash-platform-ms"></div>
+          </div>
+          <label class="field"><span>Pillar</span><select id="dash-pillar"></select></label>
+          <label class="field"><span>Format</span><select id="dash-format"></select></label>
+        </div>
+      </div>
+
+      <div class="metric-grid" id="dash-cards" style="margin-top:16px"></div>
+
+      <div class="chart-grid">
+        <div class="chart-card"><h3>Views by Platform</h3><div id="ch-views"></div></div>
+        <div class="chart-card"><h3>Avg Engagement Rate by Platform</h3><div id="ch-er"></div></div>
+        <div class="chart-card"><h3>Posts by Format</h3><div id="ch-format"></div></div>
+        <div class="chart-card"><h3>Posts by Content Pillar</h3><div id="ch-pillar"></div></div>
+        <div class="chart-card full"><h3>Content Score Over Time (weekly avg)</h3><div id="ch-score"></div></div>
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <div class="section-label">Top 5 Content</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>Date</th><th>Platform</th><th>Hook</th><th>Views</th><th>Eng.Rate</th><th>Score</th><th>Tier</th></tr></thead>
+            <tbody id="top5-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PATTERN ANALYSIS ============ -->
+    <section class="page" id="page-patterns">
+      <div class="page-head"><div><h1>Pattern Analysis</h1><p>What's working across formats, pillars, hooks, and platforms.</p></div></div>
+
+      <div class="card"><div class="toolbar"><label class="field"><span>Platform</span><select id="pat-platform"></select></label></div></div>
+
+      <div class="subgrid" style="margin-top:16px">
+        <div class="card"><div class="section-label">Format Performance</div><div id="pat-format"></div></div>
+        <div class="card"><div class="section-label">Content Pillar Performance</div><div id="pat-pillar"></div></div>
+      </div>
+
+      <div class="card" style="margin-top:16px"><div class="section-label">Top 10 Hooks by Score</div><div id="pat-hooks"></div></div>
+      <div class="card" style="margin-top:16px"><div class="section-label">Platform Benchmarks</div><div id="pat-bench"></div></div>
+      <div class="card" style="margin-top:16px"><div class="section-label">CTA Effectiveness</div><div id="pat-cta"></div></div>
+      <div class="card" style="margin-top:16px"><div class="section-label">Insights Summary</div><div id="pat-insights"></div></div>
+    </section>
+
+    <!-- ============ TIME ANALYSIS ============ -->
+    <section class="page" id="page-time">
+      <div class="page-head"><div><h1>Time Analysis</h1><p>Best times &amp; days to post, plus consistency tracking.</p></div></div>
+
+      <div class="card"><div class="toolbar"><label class="field"><span>Platform</span><select id="time-platform"></select></label></div></div>
+
+      <div class="card" style="margin-top:16px"><div class="section-label">Best Day to Post</div><div id="time-day"></div></div>
+      <div class="card" style="margin-top:16px"><div class="section-label">Best Hour to Post</div><div id="time-heatmap"></div></div>
+      <div class="card" style="margin-top:16px"><div class="section-label">Posting Frequency (posts / week)</div><div id="time-freq"></div></div>
+
+      <div class="subgrid" style="margin-top:16px">
+        <div class="card"><div class="section-label">Consistency Score</div><div id="time-consistency"></div></div>
+        <div class="card"><div class="section-label">Gap Analysis</div><div id="time-gaps"></div></div>
+      </div>
+    </section>
+
+    <!-- ============ EXPORT & ANALYSIS ============ -->
+    <section class="page" id="page-export">
+      <div class="page-head"><div><h1>Export &amp; Analysis</h1><p>Export, back up, restore, and prep your data for AI analysis.</p></div></div>
+
+      <div class="card">
+        <div class="section-label">Export Options</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn btn-secondary" id="exp-csv">⬇ Export CSV (current filters)</button>
+          <button class="btn btn-primary" id="exp-json">⬇ Backup Data (JSON)</button>
+          <button class="btn" id="exp-import">⬆ Restore Data (JSON)</button>
+          <input type="file" id="import-file" accept="application/json" style="display:none" />
+        </div>
+        <p class="hint">CSV respects the current Dashboard filters (date range, platform, pillar, format). JSON backup includes all posts and settings; restoring replaces current data.</p>
+      </div>
+
+      <div class="card">
+        <div class="claude-panel">
+          <h3>🤖 Analyze with Claude</h3>
+          <p class="desc">Copy your data summary below and paste it into a new Claude chat to get AI-powered insights about your content strategy.</p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" id="gen-summary">Generate Summary</button>
+            <button class="btn" id="copy-summary">Copy Summary</button>
+          </div>
+          <textarea class="summary-box" id="summary-out" readonly placeholder="Click “Generate Summary” to build a structured snapshot of your data…"></textarea>
+
+          <div class="section-label" style="margin-top:18px">Suggested Prompts</div>
+          <p class="hint" style="margin-top:0">Click a prompt to copy it together with your data summary, ready to paste into Claude.</p>
+          <div class="prompt-grid" id="prompt-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SETTINGS ============ -->
+    <section class="page" id="page-settings">
+      <div class="page-head"><div><h1>Settings</h1><p>Manage the dropdown lists used across the app.</p></div></div>
+
+      <div class="card">
+        <div class="section-label">Platform Manager</div>
+        <div id="mgr-platforms"></div>
+        <div class="add-row">
+          <input type="text" id="add-platform" placeholder="New platform name" />
+          <input type="color" id="add-platform-color" value="#2563EB" title="Platform color" />
+          <button class="btn btn-primary" data-add="platforms">Add Platform</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Content Pillar Manager</div>
+        <div id="mgr-pillars"></div>
+        <div class="add-row">
+          <input type="text" id="add-pillar" placeholder="New pillar name" />
+          <button class="btn btn-primary" data-add="pillars">Add Pillar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">CTA Manager</div>
+        <div id="mgr-ctas"></div>
+        <div class="add-row">
+          <input type="text" id="add-cta" placeholder="New CTA text" />
+          <button class="btn btn-primary" data-add="ctas">Add CTA</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">App Info</div>
+        <div class="info-grid" id="app-info"></div>
+      </div>
+
+      <div class="card">
+        <div class="section-label">Danger Zone</div>
+        <button class="btn btn-danger" id="reset-all">Clear All Data</button>
+        <p class="hint">Removes every post and resets settings to defaults. Export a backup first — this requires double confirmation.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ===================== POST MODAL ===================== -->
+<div class="modal-overlay" id="post-modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 id="modal-title">Add Post</h2>
+      <button class="close-x" id="modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <form id="post-form">
+        <input type="hidden" id="p-id" />
+
+        <div class="section-label">Meta</div>
+        <div class="form-grid">
+          <label class="field"><span>Post ID</span><input type="text" id="p-postid" class="readonly" readonly /></label>
+          <label class="field"><span>Date</span><input type="date" id="p-date" required /></label>
+          <label class="field"><span>Time</span><input type="time" id="p-time" /></label>
+          <label class="field"><span>Day</span><input type="text" id="p-day" class="readonly" readonly /></label>
+
+          <label class="field"><span>Platform</span><select id="p-platform"></select></label>
+          <label class="field"><span>Format</span><select id="p-format"></select></label>
+          <label class="field"><span>Topic / Pillar</span><select id="p-pillar"></select></label>
+          <label class="field"><span>CTA</span><select id="p-cta"></select></label>
+        </div>
+
+        <div class="section-label">Content</div>
+        <div class="form-grid">
+          <label class="field col-2"><span>Hook</span><textarea id="p-hook" placeholder="The opening line / scroll-stopper"></textarea></label>
+          <label class="field col-2"><span>Caption</span><textarea id="p-caption" placeholder="Full caption text"></textarea></label>
+        </div>
+
+        <div class="section-label">Metrics</div>
+        <div class="form-grid">
+          <label class="field"><span>Views</span><input type="number" id="p-views" min="0" value="0" /></label>
+          <label class="field"><span>Likes</span><input type="number" id="p-likes" min="0" value="0" /></label>
+          <label class="field"><span>Comments</span><input type="number" id="p-comments" min="0" value="0" /></label>
+          <label class="field"><span>Shares</span><input type="number" id="p-shares" min="0" value="0" /></label>
+          <label class="field"><span>Bookmarks</span><input type="number" id="p-bookmarks" min="0" value="0" /></label>
+          <label class="field"><span>Profile Visits</span><input type="number" id="p-visits" min="0" value="0" /></label>
+          <label class="field"><span>Link Clicks</span><input type="number" id="p-clicks" min="0" value="0" /></label>
+          <label class="field"><span>New Followers</span><input type="number" id="p-followers" min="0" value="0" /></label>
+        </div>
+
+        <div class="section-label">Notes</div>
+        <div class="form-grid">
+          <label class="field col-4"><span>Internal notes (optional)</span><textarea id="p-notes"></textarea></label>
+        </div>
+
+        <div class="section-label">Live Score Preview</div>
+        <div class="score-preview" id="score-preview">
+          <div class="chip"><span class="k">Content Score</span><span class="v" id="pv-score">0</span></div>
+          <div class="chip"><span class="k">Tier</span><span class="v" id="pv-tier">—</span></div>
+          <div class="chip"><span class="k">Engagement Rate</span><span class="v" id="pv-er">0%</span></div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="modal-delete" style="display:none">Delete</button>
+      <div style="display:flex; gap:10px; margin-left:auto;">
+        <button class="btn" id="modal-cancel">Cancel</button>
+        <button class="btn btn-primary" id="modal-save">Save Post</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== CONFIRM MODAL (reusable) ===================== -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-head">
+      <h2 id="cm-title">Confirm</h2>
+      <button class="close-x" id="cm-x">&times;</button>
+    </div>
+    <div class="modal-body"><p id="cm-msg" style="line-height:1.55"></p></div>
+    <div class="modal-foot">
+      <div style="margin-left:auto; display:flex; gap:10px;">
+        <button class="btn" id="cm-cancel">Cancel</button>
+        <button class="btn btn-danger" id="cm-ok">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+/* ============================================================
+   SHEETLY SOCIAL TRACKER
+   Single-file app. Data persisted in localStorage.
+   Keys: sheetly_posts (array), sheetly_settings (object)
+   ============================================================ */
+
+/* ---------- Constants ---------- */
+const STORAGE_POSTS = 'sheetly_posts';
+const STORAGE_SETTINGS = 'sheetly_settings';
+const STORAGE_BACKUP_COUNTER = 'sheetly_backup_counter';
+const STORAGE_LAST_BACKUP = 'sheetly_last_backup';
+const PAGE_SIZE = 20;
+const FORMATS = ['Carousel', 'Reels/Video', 'Single Image', 'Text Post', 'Story'];
+
+// Indonesian day names, indexed by JS getDay() (0 = Sunday)
+const DAYS_ID = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+
+const DEFAULT_SETTINGS = {
+  platforms: ['TikTok', 'Instagram', 'X', 'Threads', 'YouTube', 'LinkedIn', 'Nowdots'],
+  pillars: ['Career Tips', 'Behind the Scenes', 'Product Showcase', 'Personal Story', 'Educational', 'Motivational'],
+  ctas: ['Follow for more', 'Link in bio', 'Save this post', 'Share with a friend', 'Comment below', 'DM me', 'Visit website'],
+  platformColors: {
+    'TikTok': '#111827', 'Instagram': '#EC4899', 'X': '#2563EB', 'Threads': '#6366F1',
+    'YouTube': '#EF4444', 'LinkedIn': '#0A66C2', 'Nowdots': '#10B981'
+  }
+};
+
+// Tier definitions, ordered high → low. min/max inclusive.
+const TIERS = [
+  { name: 'Viral',         label: '🔥 Viral',          min: 80, max: 100, color: '#EF4444' },
+  { name: 'Top Performer', label: '⭐ Top Performer',   min: 55, max: 79,  color: '#F59E0B' },
+  { name: 'Good',          label: '✅ Good',            min: 30, max: 54,  color: '#10B981' },
+  { name: 'Average',       label: '📊 Average',         min: 10, max: 29,  color: '#2563EB' },
+  { name: 'Below Average', label: '📉 Below Average',   min: 0,  max: 9,   color: '#9CA3AF' }
+];
+
+/* ---------- State ---------- */
+let posts = [];
+let settings = {};
+let currentPage = 1;
+let sortKey = 'date';
+let sortDir = 'desc';
+let expandedId = null;
+
+/* ============================================================
+   STORAGE
+   ============================================================ */
+const loadPosts = () => {
+  try { posts = JSON.parse(localStorage.getItem(STORAGE_POSTS)) || []; }
+  catch { posts = []; }
+};
+const savePosts = () => localStorage.setItem(STORAGE_POSTS, JSON.stringify(posts));
+
+const loadSettings = () => {
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_SETTINGS));
+    settings = s && s.platforms ? s : structuredClone(DEFAULT_SETTINGS);
+  } catch { settings = structuredClone(DEFAULT_SETTINGS); }
+  // Backfill fields that may be missing from older saved data
+  if (!settings.platformColors) settings.platformColors = {};
+  ['platforms', 'pillars', 'ctas'].forEach(k => { if (!Array.isArray(settings[k])) settings[k] = []; });
+};
+const saveSettings = () => localStorage.setItem(STORAGE_SETTINGS, JSON.stringify(settings));
+
+/* ============================================================
+   SCORING
+   ============================================================ */
+
+/** Engagement Rate = (Likes+Comments+Shares+Bookmarks)/Views × 100 */
+const engagementRate = (p) => {
+  const views = Math.max(Number(p.views) || 0, 1);
+  const eng = (Number(p.likes)||0) + (Number(p.comments)||0) + (Number(p.shares)||0) + (Number(p.bookmarks)||0);
+  return (eng / views) * 100;
+};
+
+/** Final Content Score (0–100) per the weighted algorithm. */
+const contentScore = (p) => {
+  const raw =
+    (Number(p.likes)||0)    * 1.5 +
+    (Number(p.comments)||0) * 3.0 +
+    (Number(p.shares)||0)   * 4.0 +
+    (Number(p.bookmarks)||0)* 2.0 +
+    (Number(p.visits)||0)   * 0.5 +
+    (Number(p.clicks)||0)   * 1.0 +
+    (Number(p.followers)||0)* 5.0;
+  const normalized = (raw / Math.max(Number(p.views) || 0, 1)) * 1000;
+  return Math.min(100, Math.round(normalized));
+};
+
+/** Resolve a score to its tier object. */
+const tierFor = (score) => TIERS.find(t => score >= t.min && score <= t.max) || TIERS[TIERS.length - 1];
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+const $  = (sel, ctx = document) => ctx.querySelector(sel);
+const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
+const escapeHtml = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/** Indonesian weekday from an ISO date string (yyyy-mm-dd). */
+const dayFromDate = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  return isNaN(d) ? '' : DAYS_ID[d.getDay()];
+};
+
+/** Generate next Post ID: SHT-YYYYMMDD-XXX (sequence per date). */
+const genPostId = (iso) => {
+  const compact = (iso || '').replace(/-/g, '');
+  const sameDay = posts.filter(p => (p.date || '').replace(/-/g, '') === compact).length;
+  const seq = String(sameDay + 1).padStart(3, '0');
+  return `SHT-${compact}-${seq}`;
+};
+
+const fmtNum = (n) => (Number(n) || 0).toLocaleString('en-US');
+
+/** Percentage with 1 decimal place, e.g. 3.2%. */
+const fmtPct = (v) => (Number.isFinite(v) ? v.toFixed(1) : '0.0') + '%';
+
+/** Display an ISO date in Indonesian locale, e.g. "15 Jun 2024". Storage stays ISO. */
+const fmtDate = (iso) => {
+  if (!iso) return '—';
+  const d = new Date(iso + 'T00:00:00');
+  if (isNaN(d)) return iso;
+  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+/** Resolve a platform's display color (user-set, else palette fallback). */
+const platformColor = (name) => {
+  if (settings.platformColors && settings.platformColors[name]) return settings.platformColors[name];
+  let h = 0; for (const c of String(name || '')) h = (h * 31 + c.charCodeAt(0)) % PALETTE.length;
+  return PALETTE[h];
+};
+
+/** Rough byte size of our stored data, human-readable. */
+const storageSize = () => {
+  let bytes = 0;
+  [STORAGE_POSTS, STORAGE_SETTINGS].forEach(k => { const v = localStorage.getItem(k); if (v) bytes += v.length + k.length; });
+  bytes *= 2; // UTF-16 chars ≈ 2 bytes
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+};
+
+/* ============================================================
+   TOASTS
+   ============================================================ */
+const toast = (msg, type = 'info') => {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  $('#toasts').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; }, 2600);
+  setTimeout(() => el.remove(), 3000);
+};
+
+/** Promise-based confirmation modal for destructive actions. */
+const confirmModal = ({ title = 'Confirm', message = '', confirmText = 'Confirm', danger = true } = {}) =>
+  new Promise(resolve => {
+    const overlay = $('#confirm-modal');
+    $('#cm-title').textContent = title;
+    $('#cm-msg').textContent = message;
+    const okBtn = $('#cm-ok');
+    okBtn.textContent = confirmText;
+    okBtn.className = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
+    overlay.classList.add('open');
+    okBtn.focus();
+
+    const done = (val) => {
+      overlay.classList.remove('open');
+      okBtn.removeEventListener('click', onOk);
+      $('#cm-cancel').removeEventListener('click', onCancel);
+      $('#cm-x').removeEventListener('click', onCancel);
+      overlay.removeEventListener('click', onBackdrop);
+      document.removeEventListener('keydown', onKey);
+      resolve(val);
+    };
+    const onOk = () => done(true);
+    const onCancel = () => done(false);
+    const onBackdrop = (e) => { if (e.target === overlay) done(false); };
+    const onKey = (e) => { if (e.key === 'Escape') done(false); if (e.key === 'Enter') done(true); };
+
+    okBtn.addEventListener('click', onOk);
+    $('#cm-cancel').addEventListener('click', onCancel);
+    $('#cm-x').addEventListener('click', onCancel);
+    overlay.addEventListener('click', onBackdrop);
+    document.addEventListener('keydown', onKey);
+  });
+
+/** Illustrated empty state with optional CTA button id. */
+const emptyIllus = (title, text, ctaLabel = '', ctaId = '') => `
+  <div class="empty-illus">
+    <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+      <rect x="12" y="16" width="48" height="40" rx="6" fill="#EFF4FF" stroke="#2563EB" stroke-width="2"/>
+      <line x1="20" y1="28" x2="52" y2="28" stroke="#93B4FF" stroke-width="2" stroke-linecap="round"/>
+      <line x1="20" y1="36" x2="44" y2="36" stroke="#93B4FF" stroke-width="2" stroke-linecap="round"/>
+      <line x1="20" y1="44" x2="48" y2="44" stroke="#93B4FF" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="54" cy="50" r="12" fill="#10B981"/>
+      <path d="M49 50l3.5 3.5L60 46" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h4>${escapeHtml(title)}</h4>
+    <p>${escapeHtml(text)}</p>
+    ${ctaLabel ? `<button class="btn btn-primary" id="${ctaId}">${escapeHtml(ctaLabel)}</button>` : ''}
+  </div>`;
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+const initNav = () => {
+  $$('.nav-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $$('.nav-item').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const page = btn.dataset.page;
+      $$('.page').forEach(p => p.classList.remove('active'));
+      $(`#page-${page}`).classList.add('active');
+      renderPage(page);
+    });
+  });
+};
+
+/* ============================================================
+   DROPDOWN POPULATION
+   ============================================================ */
+const fillSelect = (sel, items, { includeAll = false, allLabel = 'All' } = {}) => {
+  const prev = sel.value;
+  sel.innerHTML = '';
+  if (includeAll) sel.appendChild(new Option(allLabel, ''));
+  items.forEach(it => sel.appendChild(new Option(it, it)));
+  if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+};
+
+const refreshAllDropdowns = () => {
+  // Form selects (no "All" option)
+  fillSelect($('#p-platform'), settings.platforms);
+  fillSelect($('#p-format'), FORMATS);
+  fillSelect($('#p-pillar'), settings.pillars);
+  fillSelect($('#p-cta'), settings.ctas);
+  // Filter selects (with "All")
+  fillSelect($('#f-platform'), settings.platforms, { includeAll: true });
+  fillSelect($('#f-pillar'), settings.pillars, { includeAll: true });
+  fillSelect($('#f-format'), FORMATS, { includeAll: true });
+  fillSelect($('#f-tier'), TIERS.map(t => t.name), { includeAll: true });
+};
+
+/* ============================================================
+   POST MODAL
+   ============================================================ */
+const modal = $('#post-modal');
+
+const readForm = () => ({
+  views:     Number($('#p-views').value)     || 0,
+  likes:     Number($('#p-likes').value)     || 0,
+  comments:  Number($('#p-comments').value)  || 0,
+  shares:    Number($('#p-shares').value)    || 0,
+  bookmarks: Number($('#p-bookmarks').value) || 0,
+  visits:    Number($('#p-visits').value)    || 0,
+  clicks:    Number($('#p-clicks').value)    || 0,
+  followers: Number($('#p-followers').value) || 0
+});
+
+/** Update the live score preview inside the modal. */
+const updateScorePreview = () => {
+  const p = readForm();
+  const score = contentScore(p);
+  const tier = tierFor(score);
+  const er = engagementRate(p);
+  $('#pv-score').textContent = score;
+  $('#pv-tier').textContent = tier.label;
+  $('#pv-tier').style.color = tier.color;
+  $('#pv-er').textContent = fmtPct(er);
+};
+
+const openModal = (post = null) => {
+  $('#post-form').reset();
+  refreshAllDropdowns();
+
+  if (post) {
+    $('#modal-title').textContent = 'Edit Post';
+    $('#modal-delete').style.display = '';
+    $('#p-id').value = post.id;
+    $('#p-postid').value = post.postId;
+    $('#p-date').value = post.date || '';
+    $('#p-time').value = post.time || '';
+    $('#p-day').value = post.day || dayFromDate(post.date);
+    $('#p-platform').value = post.platform || '';
+    $('#p-format').value = post.format || '';
+    $('#p-pillar').value = post.pillar || '';
+    $('#p-cta').value = post.cta || '';
+    $('#p-hook').value = post.hook || '';
+    $('#p-caption').value = post.caption || '';
+    $('#p-views').value = post.views || 0;
+    $('#p-likes').value = post.likes || 0;
+    $('#p-comments').value = post.comments || 0;
+    $('#p-shares').value = post.shares || 0;
+    $('#p-bookmarks').value = post.bookmarks || 0;
+    $('#p-visits').value = post.visits || 0;
+    $('#p-clicks').value = post.clicks || 0;
+    $('#p-followers').value = post.followers || 0;
+    $('#p-notes').value = post.notes || '';
+  } else {
+    $('#modal-title').textContent = 'Add Post';
+    $('#modal-delete').style.display = 'none';
+    $('#p-id').value = '';
+    const today = new Date().toISOString().slice(0, 10);
+    $('#p-date').value = today;
+    $('#p-day').value = dayFromDate(today);
+    $('#p-postid').value = genPostId(today);
+  }
+  updateScorePreview();
+  modal.classList.add('open');
+};
+
+const closeModal = () => modal.classList.remove('open');
+
+/** Build the post object from the form and persist (create or update). */
+const savePost = () => {
+  const date = $('#p-date').value;
+  if (!date) { toast('Date is required.', 'error'); return; }
+
+  const editingId = $('#p-id').value;
+  const metrics = readForm();
+
+  const base = {
+    date,
+    time: $('#p-time').value,
+    day: dayFromDate(date),
+    platform: $('#p-platform').value,
+    format: $('#p-format').value,
+    pillar: $('#p-pillar').value,
+    cta: $('#p-cta').value,
+    hook: $('#p-hook').value.trim(),
+    caption: $('#p-caption').value.trim(),
+    notes: $('#p-notes').value.trim(),
+    ...metrics
+  };
+
+  if (editingId) {
+    const idx = posts.findIndex(p => p.id === editingId);
+    if (idx !== -1) {
+      posts[idx] = { ...posts[idx], ...base };
+      // keep original postId; refresh day in case date changed
+      toast('Post updated.', 'success');
+    }
+  } else {
+    const newPost = {
+      id: uid(),
+      postId: genPostId(date),
+      ...base
+    };
+    posts.push(newPost);
+    toast('Post added.', 'success');
+    incrementBackupCounter();
+  }
+
+  savePosts();
+  closeModal();
+  renderTable();
+};
+
+const deletePost = async (id) => {
+  const p = posts.find(x => x.id === id);
+  if (!p) return;
+  const ok = await confirmModal({ title: 'Delete post', message: `Delete ${p.postId}? This cannot be undone.`, confirmText: 'Delete' });
+  if (!ok) return;
+  posts = posts.filter(x => x.id !== id);
+  savePosts();
+  if (expandedId === id) expandedId = null;
+  closeModal();
+  renderTable();
+  toast('Post deleted.', 'info');
+};
+
+/* ============================================================
+   BACKUP REMINDER (every 20 posts added)
+   ============================================================ */
+const incrementBackupCounter = () => {
+  let n = Number(localStorage.getItem(STORAGE_BACKUP_COUNTER) || 0) + 1;
+  if (n >= 20) {
+    n = 0;
+    setTimeout(() => {
+      if (confirm('You\'ve added 20 posts since your last backup reminder.\n\nExport a JSON backup now?')) {
+        exportJSON();
+      }
+    }, 400);
+  }
+  localStorage.setItem(STORAGE_BACKUP_COUNTER, String(n));
+};
+
+/* ============================================================
+   FILTERING + SORTING
+   ============================================================ */
+const getFilters = () => ({
+  search: $('#f-search').value.trim().toLowerCase(),
+  platform: $('#f-platform').value,
+  pillar: $('#f-pillar').value,
+  format: $('#f-format').value,
+  tier: $('#f-tier').value,
+  from: $('#f-from').value,
+  to: $('#f-to').value
+});
+
+const applyFilters = () => {
+  const f = getFilters();
+  return posts.filter(p => {
+    if (f.platform && p.platform !== f.platform) return false;
+    if (f.pillar && p.pillar !== f.pillar) return false;
+    if (f.format && p.format !== f.format) return false;
+    if (f.tier && tierFor(contentScore(p)).name !== f.tier) return false;
+    if (f.from && (p.date || '') < f.from) return false;
+    if (f.to && (p.date || '') > f.to) return false;
+    if (f.search) {
+      const hay = (p.hook + ' ' + p.caption).toLowerCase();
+      if (!hay.includes(f.search)) return false;
+    }
+    return true;
+  });
+};
+
+/** Sortable columns and the value getter for each. */
+const SORT_VALUES = {
+  date:     p => (p.date || '') + (p.time || ''),
+  platform: p => p.platform || '',
+  format:   p => p.format || '',
+  pillar:   p => p.pillar || '',
+  views:    p => Number(p.views) || 0,
+  er:       p => engagementRate(p),
+  score:    p => contentScore(p),
+  tier:     p => contentScore(p)
+};
+
+const sortPosts = (arr) => {
+  const getter = SORT_VALUES[sortKey] || SORT_VALUES.date;
+  const dir = sortDir === 'asc' ? 1 : -1;
+  return [...arr].sort((a, b) => {
+    const va = getter(a), vb = getter(b);
+    if (va < vb) return -1 * dir;
+    if (va > vb) return 1 * dir;
+    return 0;
+  });
+};
+
+/* ============================================================
+   TABLE RENDER
+   ============================================================ */
+const COLUMNS = [
+  { key: 'date',     label: 'Date' },
+  { key: 'platform', label: 'Platform' },
+  { key: 'format',   label: 'Format' },
+  { key: 'pillar',   label: 'Pillar' },
+  { key: 'views',    label: 'Views' },
+  { key: 'er',       label: 'Eng. Rate' },
+  { key: 'score',    label: 'Score' },
+  { key: 'tier',     label: 'Tier' }
+];
+
+const renderHead = () => {
+  const tr = $('#posts-head');
+  tr.innerHTML = COLUMNS.map(c => {
+    const arrow = sortKey === c.key ? `<span class="arrow">${sortDir === 'asc' ? '▲' : '▼'}</span>` : '';
+    return `<th data-key="${c.key}">${c.label} ${arrow}</th>`;
+  }).join('') + '<th></th>';
+
+  $$('#posts-head th[data-key]').forEach(th => {
+    th.addEventListener('click', () => {
+      const k = th.dataset.key;
+      if (sortKey === k) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+      else { sortKey = k; sortDir = k === 'date' ? 'desc' : 'desc'; }
+      renderTable();
+    });
+  });
+};
+
+const tierBadge = (score) => {
+  const t = tierFor(score);
+  return `<span class="badge" style="background:${t.color}">${t.label}</span>`;
+};
+
+const renderTable = () => {
+  renderHead();
+  const filtered = applyFilters();
+  const sorted = sortPosts(filtered);
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  if (currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageRows = sorted.slice(start, start + PAGE_SIZE);
+
+  const body = $('#posts-body');
+
+  if (sorted.length === 0) {
+    body.innerHTML = `<tr><td colspan="9">${
+      posts.length === 0
+        ? emptyIllus('No posts yet', 'Add your first post to start tracking your social performance.', '＋ Add Post', 'empty-add-post')
+        : `<div class="empty-state">No posts match the current filters. <button class="btn btn-sm" id="empty-clear">Clear filters</button></div>`
+    }</td></tr>`;
+    const addBtn = $('#empty-add-post'); if (addBtn) addBtn.addEventListener('click', () => openModal());
+    const clrBtn = $('#empty-clear'); if (clrBtn) clrBtn.addEventListener('click', () => $('#f-reset').click());
+    $('#result-count').textContent = `0 of ${posts.length} posts`;
+    $('#pager').innerHTML = '';
+    return;
+  }
+
+  body.innerHTML = pageRows.map(p => {
+    const score = contentScore(p);
+    const t = tierFor(score);
+    const er = engagementRate(p);
+    const rows = `
+      <tr class="data-row" data-id="${p.id}">
+        <td>${fmtDate(p.date)}<div class="muted">${escapeHtml(p.day || '')} ${escapeHtml(p.time || '')}</div></td>
+        <td>${escapeHtml(p.platform || '—')}</td>
+        <td><span class="pill">${escapeHtml(p.format || '—')}</span></td>
+        <td>${escapeHtml(p.pillar || '—')}</td>
+        <td>${fmtNum(p.views)}</td>
+        <td>${fmtPct(er)}</td>
+        <td>
+          <div class="score-cell">
+            <strong>${score}</strong>
+            <span class="score-bar"><i style="width:${score}%;background:${t.color}"></i></span>
+          </div>
+        </td>
+        <td>${tierBadge(score)}</td>
+        <td><button class="btn btn-ghost btn-sm" data-edit="${p.id}">Edit</button></td>
+      </tr>`;
+    const detail = expandedId === p.id ? renderDetail(p) : '';
+    return rows + detail;
+  }).join('');
+
+  // Row click → expand/collapse
+  $$('#posts-body tr.data-row').forEach(tr => {
+    tr.addEventListener('click', (e) => {
+      if (e.target.closest('[data-edit]')) return;
+      const id = tr.dataset.id;
+      expandedId = expandedId === id ? null : id;
+      renderTable();
+    });
+  });
+  $$('#posts-body [data-edit]').forEach(b =>
+    b.addEventListener('click', (e) => { e.stopPropagation(); openModal(posts.find(p => p.id === b.dataset.edit)); }));
+  $$('#posts-body [data-del]').forEach(b =>
+    b.addEventListener('click', (e) => { e.stopPropagation(); deletePost(b.dataset.del); }));
+
+  $('#result-count').textContent = `Showing ${start + 1}–${Math.min(start + PAGE_SIZE, sorted.length)} of ${sorted.length} (filtered from ${posts.length})`;
+  renderPager(totalPages);
+};
+
+const renderDetail = (p) => {
+  const score = contentScore(p);
+  const er = engagementRate(p);
+  const item = (k, v) => `<div class="item"><div class="k">${k}</div><div class="v">${escapeHtml(v || '—')}</div></div>`;
+  return `
+    <tr class="detail-row"><td colspan="9"><div class="detail-panel">
+      <div class="detail-grid">
+        ${item('Post ID', p.postId)}
+        ${item('Date / Day', `${fmtDate(p.date)} · ${p.day || '—'}`)}
+        ${item('Time', p.time)}
+        ${item('CTA', p.cta)}
+        ${item('Views', fmtNum(p.views))}
+        ${item('Likes', fmtNum(p.likes))}
+        ${item('Comments', fmtNum(p.comments))}
+        ${item('Shares', fmtNum(p.shares))}
+        ${item('Bookmarks', fmtNum(p.bookmarks))}
+        ${item('Profile Visits', fmtNum(p.visits))}
+        ${item('Link Clicks', fmtNum(p.clicks))}
+        ${item('New Followers', fmtNum(p.followers))}
+        ${item('Engagement Rate', fmtPct(er))}
+        ${item('Content Score', String(score))}
+      </div>
+      <div style="margin-top:14px">${item('Hook', p.hook)}</div>
+      <div style="margin-top:10px">${item('Caption', p.caption)}</div>
+      ${p.notes ? `<div style="margin-top:10px">${item('Notes', p.notes)}</div>` : ''}
+      <div class="detail-actions">
+        <button class="btn btn-sm btn-primary" data-edit="${p.id}">Edit</button>
+        <button class="btn btn-sm btn-danger" data-del="${p.id}">Delete</button>
+      </div>
+    </div></td></tr>`;
+};
+
+const renderPager = (totalPages) => {
+  const pager = $('#pager');
+  if (totalPages <= 1) { pager.innerHTML = ''; return; }
+  let html = `<button class="btn page-btn" data-pg="${currentPage - 1}" ${currentPage === 1 ? 'disabled' : ''}>‹</button>`;
+  for (let i = 1; i <= totalPages; i++) {
+    html += `<button class="btn page-btn ${i === currentPage ? 'active' : ''}" data-pg="${i}">${i}</button>`;
+  }
+  html += `<button class="btn page-btn" data-pg="${currentPage + 1}" ${currentPage === totalPages ? 'disabled' : ''}>›</button>`;
+  pager.innerHTML = html;
+  $$('#pager [data-pg]').forEach(b => b.addEventListener('click', () => {
+    const pg = Number(b.dataset.pg);
+    if (pg >= 1 && pg <= totalPages) { currentPage = pg; renderTable(); }
+  }));
+};
+
+/* ============================================================
+   SETTINGS — CRUD managers
+   ============================================================ */
+// Which post field each settings list maps to (for usage checks/renames)
+const FIELD_OF = { platforms: 'platform', pillars: 'pillar', ctas: 'cta' };
+const usageCount = (key, name) => posts.filter(p => p[FIELD_OF[key]] === name).length;
+
+/** Render the full Settings screen. */
+const renderSettings = () => {
+  renderManager('platforms');
+  renderManager('pillars');
+  renderManager('ctas');
+  renderAppInfo();
+};
+
+/** Render one manager list (platforms get a color dot/picker). */
+const renderManager = (key) => {
+  const cont = $('#mgr-' + key);
+  const list = settings[key];
+  if (!list.length) { cont.innerHTML = `<p class="muted" style="margin-bottom:10px">None yet — add one below.</p>`; return; }
+
+  cont.innerHTML = list.map((name, i) => {
+    const used = usageCount(key, name);
+    const dot = key === 'platforms' ? `<span class="dot" style="background:${platformColor(name)}"></span>` : '';
+    const del = used > 0
+      ? `<button class="btn btn-sm" disabled title="In use by ${used} post(s) — cannot delete">Delete</button>`
+      : `<button class="btn btn-sm btn-danger" data-del-setting="${key}" data-i="${i}">Delete</button>`;
+    return `<div class="mgr-row" data-key="${key}" data-i="${i}">
+      ${dot}
+      <span class="nm">${escapeHtml(name)}</span>
+      <span class="use">${used} post${used === 1 ? '' : 's'}</span>
+      <div class="acts">
+        <button class="btn btn-sm" data-edit-setting="${key}" data-i="${i}">Edit</button>
+        ${del}
+      </div>
+    </div>`;
+  }).join('');
+
+  $$(`[data-edit-setting="${key}"]`, cont).forEach(b => b.addEventListener('click', () => startEditSetting(key, Number(b.dataset.i))));
+  $$(`[data-del-setting="${key}"]`, cont).forEach(b => b.addEventListener('click', () => deleteSetting(key, Number(b.dataset.i))));
+};
+
+/** Switch a manager row into inline edit mode. */
+const startEditSetting = (key, i) => {
+  const row = $(`.mgr-row[data-key="${key}"][data-i="${i}"]`);
+  const name = settings[key][i];
+  const colorInput = key === 'platforms' ? `<input type="color" class="edit-color" value="${platformColor(name)}" />` : '';
+  row.innerHTML = `${colorInput}
+    <input class="edit-name" value="${escapeHtml(name)}" />
+    <div class="acts">
+      <button class="btn btn-sm btn-primary" data-save>Save</button>
+      <button class="btn btn-sm" data-cancel>Cancel</button>
+    </div>`;
+  const nameInput = $('.edit-name', row);
+  nameInput.focus(); nameInput.select();
+  $('[data-save]', row).addEventListener('click', () => saveEditSetting(key, i, row));
+  $('[data-cancel]', row).addEventListener('click', () => renderManager(key));
+  nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveEditSetting(key, i, row); if (e.key === 'Escape') renderManager(key); });
+};
+
+/** Persist an inline edit; renames cascade to existing posts. */
+const saveEditSetting = (key, i, row) => {
+  const newName = $('.edit-name', row).value.trim();
+  const oldName = settings[key][i];
+  if (!newName) { toast('Name cannot be empty.', 'error'); return; }
+  if (newName.toLowerCase() !== oldName.toLowerCase() &&
+      settings[key].some((x, idx) => idx !== i && x.toLowerCase() === newName.toLowerCase())) {
+    toast('That name already exists.', 'error'); return;
+  }
+  if (newName !== oldName) {
+    const field = FIELD_OF[key];
+    posts.forEach(p => { if (p[field] === oldName) p[field] = newName; });
+    settings[key][i] = newName;
+    if (key === 'platforms' && settings.platformColors[oldName] !== undefined) {
+      settings.platformColors[newName] = settings.platformColors[oldName];
+      delete settings.platformColors[oldName];
+    }
+  }
+  if (key === 'platforms') { const col = $('.edit-color', row); if (col) settings.platformColors[newName] = col.value; }
+
+  savePosts(); saveSettings();
+  renderManager(key); refreshAllDropdowns(); rebuildAnalyticsFilters();
+  if (newName !== oldName) renderTable();
+  toast('Saved.', 'success');
+};
+
+/** Delete a settings entry (guarded — only when unused). */
+const deleteSetting = (key, i) => {
+  const name = settings[key][i];
+  if (usageCount(key, name) > 0) { toast('Cannot delete — still in use by posts.', 'error'); return; }
+  settings[key].splice(i, 1);
+  if (key === 'platforms') delete settings.platformColors[name];
+  saveSettings();
+  renderManager(key); refreshAllDropdowns(); rebuildAnalyticsFilters();
+  toast('Removed.', 'info');
+};
+
+/** Add a new settings entry (optional color for platforms). */
+const addSetting = (key, value, color) => {
+  const v = (value || '').trim();
+  if (!v) return;
+  if (settings[key].some(x => x.toLowerCase() === v.toLowerCase())) { toast('Already exists.', 'error'); return; }
+  settings[key].push(v);
+  if (key === 'platforms' && color) settings.platformColors[v] = color;
+  saveSettings();
+  renderManager(key); renderAppInfo(); refreshAllDropdowns(); rebuildAnalyticsFilters();
+  toast('Added.', 'success');
+};
+
+/** Render the App Info panel. */
+const renderAppInfo = () => {
+  const last = localStorage.getItem(STORAGE_LAST_BACKUP);
+  const lastTxt = last
+    ? new Date(last).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    : 'Never';
+  const item = (k, v) => `<div class="info-item"><div class="k">${k}</div><div class="v">${v}</div></div>`;
+  $('#app-info').innerHTML =
+    item('Total Posts', fmtNum(posts.length)) +
+    item('Data Size', storageSize()) +
+    item('Last Backup', `<span style="font-size:14px">${escapeHtml(lastTxt)}</span>`) +
+    item('Lists (Plat / Pillar / CTA)', `${settings.platforms.length} / ${settings.pillars.length} / ${settings.ctas.length}`);
+};
+
+/* ============================================================
+   EXPORT / IMPORT
+   ============================================================ */
+const download = (filename, content, mime) => {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+};
+
+const exportJSON = () => {
+  const payload = { exportedAt: new Date().toISOString(), version: 1, posts, settings };
+  download(`sheetly-backup-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(payload, null, 2), 'application/json');
+  localStorage.setItem(STORAGE_BACKUP_COUNTER, '0');
+  localStorage.setItem(STORAGE_LAST_BACKUP, new Date().toISOString());
+  toast('Backup exported.', 'success');
+  if ($('#page-settings').classList.contains('active')) renderAppInfo();
+};
+
+const importJSON = (file) => {
+  const reader = new FileReader();
+  reader.onload = async () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data.posts)) throw new Error('Invalid file: no posts array.');
+      const ok = await confirmModal({
+        title: 'Restore backup',
+        message: `This will replace all current data with ${data.posts.length} posts from the backup. Are you sure?`,
+        confirmText: 'Replace data'
+      });
+      if (!ok) return;
+      posts = data.posts;
+      if (data.settings && data.settings.platforms) { settings = data.settings; if (!settings.platformColors) settings.platformColors = {}; }
+      savePosts(); saveSettings();
+      refreshAllDropdowns(); rebuildAnalyticsFilters(); renderSettings(); renderTable();
+      toast('Data imported.', 'success');
+    } catch (err) {
+      toast('Import failed: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+};
+
+/** CSV-safe field quoting. */
+const csvCell = (v) => {
+  const s = String(v ?? '');
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+const exportCSV = (rows) => {
+  const headers = ['Post ID','Date','Time','Day','Platform','Format','Pillar','Hook','Caption','CTA',
+    'Views','Likes','Comments','Shares','Bookmarks','Profile Visits','Link Clicks','New Followers',
+    'Engagement Rate %','Content Score','Tier','Notes'];
+  const lines = [headers.join(',')];
+  rows.forEach(p => {
+    lines.push([
+      p.postId, p.date, p.time, p.day, p.platform, p.format, p.pillar, p.hook, p.caption, p.cta,
+      p.views, p.likes, p.comments, p.shares, p.bookmarks, p.visits, p.clicks, p.followers,
+      engagementRate(p).toFixed(2), contentScore(p), tierFor(contentScore(p)).name, p.notes
+    ].map(csvCell).join(','));
+  });
+  download(`sheetly-posts-${new Date().toISOString().slice(0,10)}.csv`, lines.join('\n'), 'text/csv');
+  toast(`Exported ${rows.length} posts to CSV.`, 'success');
+};
+
+/** Copy text to clipboard with fallback for file:// contexts. */
+const copyText = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch {}
+    ta.remove();
+  }
+  toast('Copied to clipboard.', 'success');
+};
+
+/* ============================================================
+   COPY FOR CLAUDE
+   ============================================================ */
+const CLAUDE_PROMPTS = [
+  { icon: '🎯', text: 'Analyze my content performance and tell me what I should double down on and what to stop doing.' },
+  { icon: '🛠️', text: 'Based on my data, what are the top 3 content improvements I should make this month?' },
+  { icon: '⚖️', text: 'Compare my platform performance and recommend where to focus my energy.' },
+  { icon: '📘', text: "What patterns do you see in my best-performing content? Give me a content playbook." }
+];
+
+/** Build a structured plain-text snapshot of the data for pasting into Claude. */
+const generateClaudeSummary = () => {
+  if (!posts.length) return 'No posts logged yet — add some posts first, then generate a summary.';
+  const dated = posts.filter(p => p.date).map(p => p.date).sort();
+  const L = [];
+  const groupAvgScore = (field) => [...groupBy(posts, p => p[field] || '—')]
+    .map(([k, a]) => ({ k, s: avg(a.map(contentScore)), n: a.length }))
+    .sort((x, y) => y.s - x.s);
+
+  L.push('=== SHEETLY SOCIAL TRACKER — DATA SUMMARY ===');
+  L.push(`Date range: ${dated.length ? fmtDate(dated[0]) + ' → ' + fmtDate(dated.at(-1)) : 'n/a'}`);
+  L.push(`Total posts: ${posts.length}`);
+  L.push('');
+
+  L.push('-- Posts by platform --');
+  [...groupBy(posts, p => p.platform || '—')].sort((a, b) => b[1].length - a[1].length)
+    .forEach(([k, a]) => L.push(`  ${k}: ${a.length}`));
+  L.push('');
+
+  L.push('-- Top 5 posts (by Content Score) --');
+  [...posts].sort((a, b) => contentScore(b) - contentScore(a)).slice(0, 5).forEach((p, i) => {
+    const s = contentScore(p);
+    L.push(`  ${i + 1}. [${s} · ${tierFor(s).name}] ${p.platform || '—'} — "${truncate(p.hook || '(no hook)', 60)}"`);
+  });
+  L.push('');
+
+  L.push('-- Avg engagement rate by platform --');
+  [...groupBy(posts, p => p.platform || '—')].forEach(([k, a]) => L.push(`  ${k}: ${fmtPct(avg(a.map(engagementRate)))}`));
+  L.push('');
+
+  L.push('-- Avg score by format --');
+  groupAvgScore('format').forEach(g => L.push(`  ${g.k}: ${g.s.toFixed(1)} (${g.n} posts)`));
+  L.push('');
+
+  L.push('-- Avg score by pillar --');
+  groupAvgScore('pillar').forEach(g => L.push(`  ${g.k}: ${g.s.toFixed(1)} (${g.n} posts)`));
+  L.push('');
+
+  L.push('-- Best posting times --');
+  const byDay = groupBy(posts.filter(p => p.date), p => p.day || dayFromDate(p.date));
+  const bestDay = DAY_ORDER.map(d => ({ d, s: byDay.has(d) ? avg(byDay.get(d).map(contentScore)) : 0 })).sort((a, b) => b.s - a.s)[0];
+  if (bestDay && bestDay.s > 0) L.push(`  Best day: ${bestDay.d} (avg score ${bestDay.s.toFixed(1)})`);
+  const byHour = {};
+  posts.filter(p => p.time).forEach(p => { const h = parseInt(p.time.slice(0, 2), 10); if (!isNaN(h)) (byHour[h] = byHour[h] || []).push(contentScore(p)); });
+  const bestHour = Object.entries(byHour).map(([h, a]) => ({ h, s: avg(a) })).sort((a, b) => b.s - a.s)[0];
+  if (bestHour) L.push(`  Best hour: ${String(bestHour.h).padStart(2, '0')}:00 (avg score ${bestHour.s.toFixed(1)})`);
+  L.push('');
+
+  L.push('-- Last 30 days vs previous 30 days --');
+  const today = todayISO();
+  const cur = posts.filter(p => p.date && p.date > addDays(today, -30) && p.date <= today);
+  const prev = posts.filter(p => p.date && p.date > addDays(today, -60) && p.date <= addDays(today, -30));
+  const pctChg = (c, p) => p === 0 ? (c > 0 ? ' (new)' : '') : ` (${c - p >= 0 ? '+' : ''}${(((c - p) / Math.abs(p)) * 100).toFixed(1)}%)`;
+  L.push(`  Posts: ${cur.length} vs ${prev.length}${pctChg(cur.length, prev.length)}`);
+  L.push(`  Avg score: ${avg(cur.map(contentScore)).toFixed(1)} vs ${avg(prev.map(contentScore)).toFixed(1)}`);
+  L.push(`  Avg engagement: ${fmtPct(avg(cur.map(engagementRate)))} vs ${fmtPct(avg(prev.map(engagementRate)))}`);
+  L.push(`  New followers: ${sum(cur.map(p => Number(p.followers) || 0))} vs ${sum(prev.map(p => Number(p.followers) || 0))}`);
+
+  return L.join('\n');
+};
+
+/** Render the 4 clickable suggested-prompt cards. */
+const renderPrompts = () => {
+  $('#prompt-grid').innerHTML = CLAUDE_PROMPTS.map((p, i) =>
+    `<button class="prompt-card" data-prompt="${i}"><span class="pico">${p.icon}</span><span>${escapeHtml(p.text)}</span></button>`).join('');
+  $$('#prompt-grid .prompt-card').forEach(b => b.addEventListener('click', () => {
+    const summary = $('#summary-out').value || generateClaudeSummary();
+    $('#summary-out').value = summary;
+    copyText(CLAUDE_PROMPTS[Number(b.dataset.prompt)].text + '\n\n' + summary);
+  }));
+};
+
+/* ============================================================
+   ANALYTICS — shared helpers
+   ============================================================ */
+const sum = (arr) => arr.reduce((a, b) => a + b, 0);
+const avg = (arr) => arr.length ? sum(arr) / arr.length : 0;
+const truncate = (s, n) => { s = String(s || ''); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
+const todayISO = () => new Date().toISOString().slice(0, 10);
+const addDays = (iso, n) => { const d = new Date(iso + 'T00:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const daysBetween = (a, b) => Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
+
+// Categorical color palette for charts
+const PALETTE = ['#2563EB','#10B981','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#EC4899','#84CC16','#6366F1','#F97316'];
+
+// Mon→Sun order using Indonesian day names
+const DAY_ORDER = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'];
+
+/** Group an array into a Map keyed by a function. */
+const groupBy = (arr, keyFn) => {
+  const m = new Map();
+  arr.forEach(x => { const k = keyFn(x); if (!m.has(k)) m.set(k, []); m.get(k).push(x); });
+  return m;
+};
+
+/** Monday-based week-start ISO date for grouping by week. */
+const weekStartISO = (iso) => {
+  const d = new Date(iso + 'T00:00:00');
+  const offset = (d.getDay() + 6) % 7; // 0 = Monday
+  d.setDate(d.getDate() - offset);
+  return d.toISOString().slice(0, 10);
+};
+
+/* ---------- Platform benchmarks (hardcoded) ---------- */
+const BENCHMARKS = {
+  tiktok:    { erGood: 3,   erGreat: 6,   viewsGood: 1000, viewsGreat: 10000 },
+  instagram: { erGood: 1.5, erGreat: 3.5, viewsGood: 500,  viewsGreat: 5000 },
+  linkedin:  { erGood: 2,   erGreat: 4,   viewsGood: 300,  viewsGreat: 2000 },
+  x:         { erGood: 0.5, erGreat: 2,   viewsGood: 500,  viewsGreat: 5000 },
+  youtube:   { erGood: 2,   erGreat: 5,   viewsGood: 1000, viewsGreat: 10000 },
+  threads:   { erGood: 1,   erGreat: 3,   viewsGood: 200,  viewsGreat: 2000 },
+  nowdots:   { erGood: 1,   erGreat: 3,   viewsGood: 200,  viewsGreat: 2000 }
+};
+
+/** Map a platform display name to its benchmark profile. */
+const benchmarkFor = (platform) => {
+  const p = (platform || '').toLowerCase();
+  if (p.includes('tiktok')) return BENCHMARKS.tiktok;
+  if (p.includes('instagram') || p === 'ig') return BENCHMARKS.instagram;
+  if (p.includes('linkedin')) return BENCHMARKS.linkedin;
+  if (p.includes('youtube') || p === 'yt') return BENCHMARKS.youtube;
+  if (p.includes('thread')) return BENCHMARKS.threads;
+  if (p.includes('nowdot')) return BENCHMARKS.nowdots;
+  if (p.includes('twitter') || p === 'x' || p.startsWith('x ') || p.startsWith('x(')) return BENCHMARKS.x;
+  return null;
+};
+
+/** Classify an actual value against good/great thresholds. */
+const classifyBench = (actual, good, great) => {
+  if (actual >= great) return { label: 'Exceeding', color: '#10B981' };
+  if (actual >= good)  return { label: 'On Track',  color: '#2563EB' };
+  return { label: 'Below', color: '#EF4444' };
+};
+
+/* ============================================================
+   ANALYTICS — SVG chart builders
+   ============================================================ */
+const svgEmpty = (msg = 'Not enough data yet.') =>
+  `<div class="placeholder" style="padding:28px"><p>${escapeHtml(msg)}</p></div>`;
+
+/** Vertical bar chart. items: [{label, value, color?}]. */
+const vBarChart = (items, opt = {}) => {
+  const { benchmark = null, fmt = (v) => fmtNum(Math.round(v)), height = 240, highlightLabel = null } = opt;
+  if (!items.length) return svgEmpty();
+  const max = Math.max(...items.map(i => i.value), benchmark || 0, 1);
+  const n = items.length, bw = 46, gap = 24, padL = 44, padR = 16, padT = 22, padB = 46;
+  const W = padL + padR + n * bw + (n - 1) * gap, H = height, plotH = H - padT - padB;
+  const x = (i) => padL + i * (bw + gap);
+  let bars = '';
+  items.forEach((it, i) => {
+    const bh = plotH * (it.value / max);
+    const c = it.color || PALETTE[i % PALETTE.length];
+    const stroke = (highlightLabel && it.label === highlightLabel) ? `stroke="#111827" stroke-width="2"` : '';
+    bars += `<rect x="${x(i)}" y="${padT + plotH - bh}" width="${bw}" height="${bh}" rx="4" fill="${c}" ${stroke}><title>${escapeHtml(it.label)}: ${fmt(it.value)}</title></rect>`;
+    bars += `<text x="${x(i) + bw/2}" y="${padT + plotH - bh - 6}" text-anchor="middle" font-size="11" fill="#111827" font-weight="600">${fmt(it.value)}</text>`;
+    bars += `<text x="${x(i) + bw/2}" y="${H - padB + 16}" text-anchor="middle" font-size="11" fill="#6B7280">${escapeHtml(truncate(it.label, 12))}</text>`;
+  });
+  let bench = '';
+  if (benchmark != null && benchmark > 0) {
+    const by = padT + plotH * (1 - benchmark / max);
+    bench = `<line x1="${padL}" y1="${by}" x2="${W - padR}" y2="${by}" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="5 4"/><text x="${W - padR}" y="${by - 4}" text-anchor="end" font-size="10" fill="#EF4444">benchmark ${fmt(benchmark)}</text>`;
+  }
+  return `<div class="chart-scroll"><svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${Math.max(W, 320)}px" font-family="Inter">${bench}${bars}</svg></div>`;
+};
+
+/** Donut chart with side legend. items: [{label, value, color?}]. */
+const donutChart = (items) => {
+  items = items.filter(i => i.value > 0);
+  const total = sum(items.map(i => i.value));
+  if (!total) return svgEmpty();
+  const r = 72, cx = 100, cy = 100, sw = 32;
+  let a = -Math.PI / 2, segs = '';
+  items.forEach((it, i) => {
+    const frac = it.value / total, a2 = a + frac * 2 * Math.PI;
+    const c = it.color || PALETTE[i % PALETTE.length];
+    if (items.length === 1) {
+      segs += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${c}" stroke-width="${sw}"><title>${escapeHtml(it.label)}: ${it.value} (100%)</title></circle>`;
+    } else {
+      const large = frac > 0.5 ? 1 : 0;
+      const x1 = cx + r*Math.cos(a), y1 = cy + r*Math.sin(a), x2 = cx + r*Math.cos(a2), y2 = cy + r*Math.sin(a2);
+      segs += `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2}" fill="none" stroke="${c}" stroke-width="${sw}"><title>${escapeHtml(it.label)}: ${it.value} (${(frac*100).toFixed(0)}%)</title></path>`;
+    }
+    a = a2;
+  });
+  const legend = items.map((it, i) =>
+    `<span class="li"><span class="sw" style="background:${it.color || PALETTE[i % PALETTE.length]}"></span>${escapeHtml(it.label)} (${it.value})</span>`).join('');
+  return `<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+    <svg viewBox="0 0 200 200" width="180" height="180" font-family="Inter">${segs}
+      <text x="${cx}" y="${cy - 2}" text-anchor="middle" font-size="22" font-weight="700" fill="#111827">${total}</text>
+      <text x="${cx}" y="${cy + 16}" text-anchor="middle" font-size="11" fill="#6B7280">posts</text>
+    </svg>
+    <div class="legend" style="flex-direction:column;gap:8px">${legend}</div></div>`;
+};
+
+/** Multi-series line chart. labels: string[]. series: [{name,color,values:(number|null)[]}]. */
+const lineChart = (labels, series, opt = {}) => {
+  const { height = 250, fmt = (v) => fmtNum(Math.round(v)) } = opt;
+  const allVals = series.flatMap(s => s.values.filter(v => v != null));
+  if (!labels.length || !allVals.length) return svgEmpty();
+  const max = Math.max(...allVals, 1);
+  const padL = 42, padR = 16, padT = 16, padB = 42;
+  const W = Math.max(labels.length * 70, 360), H = height, plotW = W - padL - padR, plotH = H - padT - padB;
+  const x = (i) => labels.length === 1 ? padL + plotW / 2 : padL + plotW * (i / (labels.length - 1));
+  const y = (v) => padT + plotH * (1 - v / max);
+  let grid = '';
+  for (let g = 0; g <= 4; g++) {
+    const gy = padT + plotH * (g / 4), val = max * (1 - g / 4);
+    grid += `<line x1="${padL}" y1="${gy}" x2="${W - padR}" y2="${gy}" stroke="#E5E7EB"/><text x="${padL - 6}" y="${gy + 3}" text-anchor="end" font-size="9" fill="#9CA3AF">${fmt(val)}</text>`;
+  }
+  let xl = '';
+  const step = Math.ceil(labels.length / 12);
+  labels.forEach((l, i) => { if (i % step === 0) xl += `<text x="${x(i)}" y="${H - padB + 16}" text-anchor="middle" font-size="9" fill="#6B7280">${escapeHtml(l.slice(5))}</text>`; });
+  let lines = '';
+  series.forEach(s => {
+    let d = '', started = false, dots = '';
+    s.values.forEach((v, i) => {
+      if (v == null) { started = false; return; }
+      const px = x(i), py = y(v);
+      d += (started ? 'L' : 'M') + px + ' ' + py + ' ';
+      started = true;
+      dots += `<circle cx="${px}" cy="${py}" r="3" fill="${s.color}"><title>${escapeHtml(s.name)} · ${escapeHtml(labels[i])}: ${fmt(v)}</title></circle>`;
+    });
+    lines += `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2"/>${dots}`;
+  });
+  return `<div class="chart-scroll"><svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px" font-family="Inter">${grid}${xl}${lines}</svg></div>`;
+};
+
+/* ============================================================
+   ANALYTICS — small table builder
+   ============================================================ */
+const buildTable = (headers, rows, highlightIdx = -1) => {
+  if (!rows.length) return svgEmpty('No data for this view.');
+  const head = headers.map(h => `<th>${escapeHtml(h)}</th>`).join('');
+  const body = rows.map((r, i) =>
+    `<tr class="${i === highlightIdx ? 'row-highlight' : ''}">${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
+  return `<div class="table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+};
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+const dashPlatforms = new Set(); // selected platforms (empty = all)
+
+/** Resolve the active date window + previous comparison window. */
+const getDashRange = () => {
+  const preset = $('#dash-range').value, today = todayISO();
+  if (preset === 'custom') return { from: $('#dash-from').value || '', to: $('#dash-to').value || today, prevFrom: null, prevTo: null };
+  if (preset === 'all')    return { from: '', to: today, prevFrom: null, prevTo: null };
+  const n = Number(preset), from = addDays(today, -(n - 1));
+  return { from, to: today, prevFrom: addDays(from, -n), prevTo: addDays(from, -1) };
+};
+
+const dashSelections = () => ({ pillar: $('#dash-pillar').value, format: $('#dash-format').value });
+
+/** Filter posts by a date window plus the active platform/pillar/format selections. */
+const filterDash = (list, from, to) => {
+  const sel = dashSelections();
+  return list.filter(p => {
+    if (from && (p.date || '') < from) return false;
+    if (to && (p.date || '') > to) return false;
+    if (dashPlatforms.size && !dashPlatforms.has(p.platform)) return false;
+    if (sel.pillar && p.pillar !== sel.pillar) return false;
+    if (sel.format && p.format !== sel.format) return false;
+    return true;
+  });
+};
+
+const dashMetrics = (list) => ({
+  posts: list.length,
+  views: sum(list.map(p => Number(p.views) || 0)),
+  avgER: avg(list.map(engagementRate)),
+  avgScore: avg(list.map(contentScore)),
+  followers: sum(list.map(p => Number(p.followers) || 0))
+});
+
+/** % change badge vs previous period. prev=null → no comparison. */
+const deltaHtml = (cur, prev) => {
+  if (prev == null) return `<span class="delta flat">— vs prev</span>`;
+  if (prev === 0) return cur > 0 ? `<span class="delta up">▲ new</span>` : `<span class="delta flat">—</span>`;
+  const change = ((cur - prev) / Math.abs(prev)) * 100;
+  const cls = Math.abs(change) < 0.05 ? 'flat' : (change > 0 ? 'up' : 'down');
+  const arrow = cls === 'flat' ? '•' : (change > 0 ? '▲' : '▼');
+  return `<span class="delta ${cls}">${arrow} ${Math.abs(change).toFixed(1)}%</span> <span style="color:var(--text-secondary)">vs prev</span>`;
+};
+
+const benchIndicator = (list) => {
+  const goods = [], greats = [];
+  list.forEach(p => { const b = benchmarkFor(p.platform); if (b) { goods.push(b.erGood); greats.push(b.erGreat); } });
+  if (!goods.length) return null;
+  return classifyBench(avg(list.map(engagementRate)), avg(goods), avg(greats));
+};
+
+const renderDashCards = (scope, prev) => {
+  const m = dashMetrics(scope);
+  const pm = prev ? dashMetrics(prev) : null;
+
+  // Best platform by avg score
+  let best = null;
+  groupBy(scope, p => p.platform).forEach((arr, name) => {
+    const a = avg(arr.map(contentScore));
+    if (name && (!best || a > best.score)) best = { name, score: a };
+  });
+
+  const bi = benchIndicator(scope);
+  const benchPill = bi ? `<span class="bench" style="background:${bi.color}">${bi.label}</span>` : '';
+
+  const card = (label, value, sub) =>
+    `<div class="metric-card"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`;
+  const has = scope.length > 0; // guard so empty scope shows "—" not 0.0%/NaN
+
+  $('#dash-cards').innerHTML = [
+    card('Total Posts', fmtNum(m.posts), deltaHtml(m.posts, pm ? pm.posts : null)),
+    card('Total Views', has ? fmtNum(m.views) : '—', deltaHtml(m.views, pm ? pm.views : null)),
+    card('Avg Engagement Rate', has ? fmtPct(m.avgER) : '—', `${benchPill} ${deltaHtml(m.avgER, pm ? pm.avgER : null)}`),
+    card('Avg Content Score', has ? m.avgScore.toFixed(1) : '—', deltaHtml(m.avgScore, pm ? pm.avgScore : null)),
+    card('Total New Followers', has ? fmtNum(m.followers) : '—', deltaHtml(m.followers, pm ? pm.followers : null)),
+    card('Best Platform (avg score)', best ? escapeHtml(best.name) : '—', best ? `avg score ${best.score.toFixed(1)}` : 'No data')
+  ].join('');
+};
+
+const renderDashCharts = (scope) => {
+  // Views by platform
+  const byPlat = groupBy(scope, p => p.platform || '—');
+  const viewItems = [...byPlat].map(([label, arr]) => ({ label, value: sum(arr.map(p => Number(p.views) || 0)), color: platformColor(label) }))
+    .sort((a, b) => b.value - a.value);
+  $('#ch-views').innerHTML = vBarChart(viewItems);
+
+  // Avg ER by platform (+ benchmark line = avg good across shown platforms)
+  const erItems = [...byPlat].map(([label, arr]) => ({ label, value: avg(arr.map(engagementRate)), color: platformColor(label) }))
+    .sort((a, b) => b.value - a.value);
+  const goods = [...byPlat].map(([label]) => benchmarkFor(label)).filter(Boolean).map(b => b.erGood);
+  $('#ch-er').innerHTML = vBarChart(erItems, { benchmark: goods.length ? avg(goods) : null, fmt: fmtPct });
+
+  // Posts by format (donut)
+  const fmtItems = [...groupBy(scope, p => p.format || '—')].map(([label, arr]) => ({ label, value: arr.length }))
+    .sort((a, b) => b.value - a.value);
+  $('#ch-format').innerHTML = donutChart(fmtItems);
+
+  // Posts by pillar (bar)
+  const pillarItems = [...groupBy(scope, p => p.pillar || '—')].map(([label, arr]) => ({ label, value: arr.length }))
+    .sort((a, b) => b.value - a.value);
+  $('#ch-pillar').innerHTML = vBarChart(pillarItems, { fmt: (v) => fmtNum(v) });
+
+  // Content score over time (weekly avg)
+  const byWeek = groupBy(scope.filter(p => p.date), p => weekStartISO(p.date));
+  const weeks = [...byWeek.keys()].sort();
+  const scoreSeries = [{ name: 'Avg score', color: '#2563EB', values: weeks.map(w => avg(byWeek.get(w).map(contentScore))) }];
+  $('#ch-score').innerHTML = lineChart(weeks, scoreSeries, { fmt: (v) => Math.round(v) });
+};
+
+const renderTop5 = (scope) => {
+  const rows = [...scope].sort((a, b) => contentScore(b) - contentScore(a)).slice(0, 5);
+  if (!rows.length) { $('#top5-body').innerHTML = `<tr><td colspan="8"><div class="empty-state">No posts in range.</div></td></tr>`; return; }
+  $('#top5-body').innerHTML = rows.map((p, i) => {
+    const s = contentScore(p), t = tierFor(s);
+    return `<tr>
+      <td><strong>${i + 1}</strong></td>
+      <td>${fmtDate(p.date)}</td>
+      <td>${escapeHtml(p.platform || '—')}</td>
+      <td title="${escapeHtml(p.hook)}">${escapeHtml(truncate(p.hook, 40) || '—')}</td>
+      <td>${fmtNum(p.views)}</td>
+      <td>${fmtPct(engagementRate(p))}</td>
+      <td><strong>${s}</strong></td>
+      <td><span class="badge" style="background:${t.color}">${t.label}</span></td>
+    </tr>`;
+  }).join('');
+};
+
+const renderDashboard = () => {
+  // toggle custom date inputs
+  const custom = $('#dash-range').value === 'custom';
+  $('#dash-from-w').style.display = custom ? '' : 'none';
+  $('#dash-to-w').style.display = custom ? '' : 'none';
+
+  const r = getDashRange();
+  const scope = filterDash(posts, r.from, r.to);
+  const prev = r.prevFrom ? filterDash(posts, r.prevFrom, r.prevTo) : null;
+  renderDashCards(scope, prev);
+  renderDashCharts(scope);
+  renderTop5(scope);
+};
+
+/** Posts matching the active Dashboard filters (used by CSV export). */
+const dashScope = () => { const r = getDashRange(); return filterDash(posts, r.from, r.to); };
+
+/** Skeleton loaders, then render — satisfies the "loading state" UX requirement. */
+const dashSkeleton = () => {
+  $('#dash-cards').innerHTML = Array.from({ length: 6 }, () => '<div class="skeleton sk-card"></div>').join('');
+  ['#ch-views', '#ch-er', '#ch-format', '#ch-pillar', '#ch-score'].forEach(id => { $(id).innerHTML = '<div class="skeleton sk-chart"></div>'; });
+};
+const renderDashboardDelayed = () => { dashSkeleton(); requestAnimationFrame(() => setTimeout(renderDashboard, 140)); };
+
+/* ============================================================
+   PATTERN ANALYSIS
+   ============================================================ */
+const patScope = () => {
+  const plat = $('#pat-platform').value;
+  return plat ? posts.filter(p => p.platform === plat) : posts;
+};
+
+/** Build a performance table grouped by a field (format or pillar). */
+const perfTable = (scope, field) => {
+  const groups = [...groupBy(scope, p => p[field] || '—')]
+    .map(([label, arr]) => ({
+      label,
+      avgViews: avg(arr.map(p => Number(p.views) || 0)),
+      avgER: avg(arr.map(engagementRate)),
+      avgScore: avg(arr.map(contentScore)),
+      count: arr.length,
+      topPct: (arr.filter(p => contentScore(p) >= 55).length / arr.length) * 100
+    }))
+    .sort((a, b) => b.avgScore - a.avgScore);
+  if (!groups.length) return svgEmpty('No data for this view.');
+  const rows = groups.map(g => [
+    `<strong>${escapeHtml(g.label)}</strong>`, fmtNum(Math.round(g.avgViews)),
+    fmtPct(g.avgER), g.avgScore.toFixed(1), g.count, g.topPct.toFixed(0) + '%'
+  ]);
+  return buildTable(['', 'Avg Views', 'Avg Eng.Rate', 'Avg Score', 'Posts', 'Top Tier %'], rows, 0);
+};
+
+const renderHookAnalysis = (scope) => {
+  const rows = scope.filter(p => (p.hook || '').trim())
+    .sort((a, b) => contentScore(b) - contentScore(a)).slice(0, 10)
+    .map((p, i) => {
+      const s = contentScore(p), t = tierFor(s);
+      return [`<strong>${i + 1}</strong>`, escapeHtml(truncate(p.hook, 60)), escapeHtml(p.platform || '—'),
+        `<strong>${s}</strong>`, `<span class="badge" style="background:${t.color}">${t.label}</span>`];
+    });
+  $('#pat-hooks').innerHTML = buildTable(['#', 'Hook', 'Platform', 'Score', 'Tier'], rows);
+};
+
+const renderPlatformBenchmarks = (scope) => {
+  const groups = [...groupBy(scope, p => p.platform || '—')];
+  if (!groups.length) { $('#pat-bench').innerHTML = svgEmpty(); return; }
+  const rows = groups.map(([name, arr]) => {
+    const aER = avg(arr.map(engagementRate)), aViews = avg(arr.map(p => Number(p.views) || 0));
+    const b = benchmarkFor(name);
+    if (!b) return [`<strong>${escapeHtml(name)}</strong>`, fmtPct(aER), fmtNum(Math.round(aViews)), '<span class="muted">No benchmark</span>'];
+    const erC = classifyBench(aER, b.erGood, b.erGreat), vC = classifyBench(aViews, b.viewsGood, b.viewsGreat);
+    return [
+      `<strong>${escapeHtml(name)}</strong>`,
+      `${fmtPct(aER)} <span class="muted">/ ${b.erGood}%–${b.erGreat}%</span> <span class="bench" style="background:${erC.color}">${erC.label}</span>`,
+      `${fmtNum(Math.round(aViews))} <span class="muted">/ ${fmtNum(b.viewsGood)}–${fmtNum(b.viewsGreat)}</span> <span class="bench" style="background:${vC.color}">${vC.label}</span>`,
+      `${arr.length} posts`
+    ];
+  });
+  $('#pat-bench').innerHTML = buildTable(['Platform', 'Eng.Rate vs benchmark', 'Views vs benchmark', 'Sample'], rows);
+};
+
+const renderCTA = (scope) => {
+  const rows = [...groupBy(scope.filter(p => p.cta), p => p.cta)]
+    .map(([cta, arr]) => ({ cta, clicks: avg(arr.map(p => Number(p.clicks) || 0)), foll: avg(arr.map(p => Number(p.followers) || 0)), count: arr.length }))
+    .sort((a, b) => b.clicks - a.clicks)
+    .map(r => [escapeHtml(r.cta), r.clicks.toFixed(1), r.foll.toFixed(1), r.count]);
+  $('#pat-cta').innerHTML = buildTable(['CTA', 'Avg Link Clicks', 'Avg New Followers', 'Posts'], rows);
+};
+
+/** Auto-generated narrative insights (no AI — pure stats). */
+const renderInsights = (scope) => {
+  const out = [];
+  if (scope.length < 2) { $('#pat-insights').innerHTML = svgEmpty('Log a few more posts to unlock insights.'); return; }
+
+  // Best format
+  const fmtGroups = [...groupBy(scope, p => p.format || '—')].map(([l, a]) => ({ l, s: avg(a.map(contentScore)), n: a.length })).sort((x, y) => y.s - x.s);
+  if (fmtGroups[0]) out.push(`Your best format is <b>${escapeHtml(fmtGroups[0].l)}</b> with avg score <b>${fmtGroups[0].s.toFixed(0)}</b> across ${fmtGroups[0].n} posts.`);
+
+  // Strongest platform by ER vs second
+  const platGroups = [...groupBy(scope, p => p.platform || '—')].map(([l, a]) => ({ l, er: avg(a.map(engagementRate)), n: a.length })).sort((x, y) => y.er - x.er);
+  if (platGroups.length >= 2 && platGroups[1].er > 0) {
+    out.push(`<b>${escapeHtml(platGroups[0].l)}</b> is your strongest platform — <b>${(platGroups[0].er / platGroups[1].er).toFixed(1)}×</b> the engagement rate of ${escapeHtml(platGroups[1].l)}.`);
+  } else if (platGroups[0]) {
+    out.push(`<b>${escapeHtml(platGroups[0].l)}</b> is your most-used platform with an avg engagement rate of <b>${fmtPct(platGroups[0].er)}</b>.`);
+  }
+
+  // Pillar shares vs average
+  const avgShares = avg(scope.map(p => Number(p.shares) || 0));
+  if (avgShares > 0) {
+    const pil = [...groupBy(scope, p => p.pillar || '—')].map(([l, a]) => ({ l, sh: avg(a.map(p => Number(p.shares) || 0)) })).sort((x, y) => y.sh - x.sh)[0];
+    if (pil && pil.sh > avgShares) {
+      out.push(`Posts with pillar <b>${escapeHtml(pil.l)}</b> get <b>${(((pil.sh - avgShares) / avgShares) * 100).toFixed(0)}%</b> more shares than your average.`);
+    }
+  }
+
+  // Top tier rate
+  const viralRate = (scope.filter(p => contentScore(p) >= 80).length / scope.length) * 100;
+  out.push(`<b>${viralRate.toFixed(0)}%</b> of your posts hit the Viral tier (score ≥ 80) — across ${scope.length} posts in view.`);
+
+  $('#pat-insights').innerHTML = out.map(t => `<div class="insight">${t}</div>`).join('');
+};
+
+const renderPatterns = () => {
+  const scope = patScope();
+  $('#pat-format').innerHTML = perfTable(scope, 'format');
+  $('#pat-pillar').innerHTML = perfTable(scope, 'pillar');
+  renderHookAnalysis(scope);
+  renderPlatformBenchmarks(scope);
+  renderCTA(scope);
+  renderInsights(scope);
+};
+
+/* ============================================================
+   TIME ANALYSIS
+   ============================================================ */
+const timeHidden = new Set(); // platforms toggled off in frequency chart
+
+const timeScope = () => {
+  const plat = $('#time-platform').value;
+  return (plat ? posts.filter(p => p.platform === plat) : posts).filter(p => p.date);
+};
+
+const renderBestDay = (scope) => {
+  const byDay = groupBy(scope, p => p.day || dayFromDate(p.date));
+  const items = DAY_ORDER.map(d => ({ label: d, value: byDay.has(d) ? avg(byDay.get(d).map(contentScore)) : 0 }));
+  const hasData = items.some(i => i.value > 0);
+  if (!hasData) { $('#time-day').innerHTML = svgEmpty(); return; }
+  const best = items.reduce((a, b) => b.value > a.value ? b : a);
+  $('#time-day').innerHTML = vBarChart(items, { fmt: (v) => v.toFixed(0), highlightLabel: best.label, height: 220 })
+    + `<p class="hint">Best day: <b>${escapeHtml(best.label)}</b> (avg score ${best.value.toFixed(1)}). Bars show average Content Score per weekday.</p>`;
+};
+
+/** 7×24 heatmap of avg score by weekday × hour. */
+const renderHeatmap = (scope) => {
+  const withTime = scope.filter(p => p.time);
+  if (!withTime.length) { $('#time-heatmap').innerHTML = svgEmpty('No posts with a time recorded yet.'); return; }
+  // matrix[day][hour] = { count, sum }
+  const matrix = DAY_ORDER.map(() => Array.from({ length: 24 }, () => ({ count: 0, sum: 0 })));
+  let maxAvg = 0;
+  withTime.forEach(p => {
+    const di = DAY_ORDER.indexOf(p.day || dayFromDate(p.date));
+    const hr = parseInt((p.time || '').slice(0, 2), 10);
+    if (di < 0 || isNaN(hr)) return;
+    const cell = matrix[di][hr]; cell.count++; cell.sum += contentScore(p);
+  });
+  matrix.forEach(row => row.forEach(c => { if (c.count) maxAvg = Math.max(maxAvg, c.sum / c.count); }));
+  maxAvg = maxAvg || 1;
+
+  let html = '<div style="overflow-x:auto"><table class="heatmap"><thead><tr><th></th>';
+  for (let h = 0; h < 24; h++) html += `<th>${h}</th>`;
+  html += '</tr></thead><tbody>';
+  DAY_ORDER.forEach((day, di) => {
+    html += `<tr><td class="lbl">${day}</td>`;
+    for (let h = 0; h < 24; h++) {
+      const c = matrix[di][h];
+      if (!c.count) { html += `<td><div class="hcell" style="background:#FFFFFF"></div></td>`; continue; }
+      const a = c.sum / c.count, intensity = 0.15 + 0.85 * (a / maxAvg);
+      html += `<td><div class="hcell" style="background:rgba(37,99,235,${intensity.toFixed(2)})" title="${day} ${h}:00 — ${c.count} post(s), avg score ${a.toFixed(0)}"></div></td>`;
+    }
+    html += '</tr>';
+  });
+  html += '</tbody></table></div><p class="hint">Darker = higher average Content Score. Hover a cell for details. Columns are hours (0–23).</p>';
+  $('#time-heatmap').innerHTML = html;
+};
+
+const renderFrequency = (scope) => {
+  if (!scope.length) { $('#time-freq').innerHTML = svgEmpty(); return; }
+  const dates = scope.map(p => p.date).sort();
+  const firstWeek = weekStartISO(dates[0]), lastWeek = weekStartISO(dates[dates.length - 1]);
+  const weeks = [];
+  for (let w = firstWeek; w <= lastWeek; w = addDays(w, 7)) weeks.push(w);
+
+  const platforms = [...new Set(scope.map(p => p.platform || '—'))];
+  const series = platforms.map((name) => {
+    const color = platformColor(name);
+    const byWeek = groupBy(scope.filter(p => (p.platform || '—') === name), p => weekStartISO(p.date));
+    return { name, color, hidden: timeHidden.has(name), values: weeks.map(w => byWeek.has(w) ? byWeek.get(w).length : 0) };
+  });
+  const visible = series.filter(s => !s.hidden);
+  $('#time-freq').innerHTML = lineChart(weeks, visible, { fmt: (v) => fmtNum(v) }) +
+    `<div class="legend">${series.map(s => `<span class="li ${s.hidden ? 'off' : ''}" data-plat="${escapeHtml(s.name)}"><span class="sw" style="background:${s.color}"></span>${escapeHtml(s.name)}</span>`).join('')}</div>`;
+
+  // Toggle visibility per platform
+  $$('#time-freq .legend .li').forEach(li => li.addEventListener('click', () => {
+    const name = li.dataset.plat;
+    timeHidden.has(name) ? timeHidden.delete(name) : timeHidden.add(name);
+    renderFrequency(scope);
+  }));
+};
+
+const renderConsistency = (scope) => {
+  if (!scope.length) { $('#time-consistency').innerHTML = svgEmpty(); return; }
+  const dates = scope.map(p => p.date).sort();
+  const firstWeek = weekStartISO(dates[0]), lastWeek = weekStartISO(dates[dates.length - 1]);
+  const weekSet = new Set(scope.map(p => weekStartISO(p.date)));
+  let total = 0; for (let w = firstWeek; w <= lastWeek; w = addDays(w, 7)) total++;
+  const active = weekSet.size, pct = total ? (active / total) * 100 : 0;
+  const color = pct >= 75 ? '#10B981' : pct >= 40 ? '#F59E0B' : '#EF4444';
+  $('#time-consistency').innerHTML = `
+    <div class="value" style="font-size:30px;font-weight:700">${pct.toFixed(0)}%</div>
+    <div class="muted">${active} of ${total} weeks had at least 1 post</div>
+    <div class="bench-bar" style="margin-top:10px"><i style="width:${pct.toFixed(0)}%;background:${color}"></i></div>
+    <p class="hint">💡 Posting consistently beats posting frequently. Aim for at least 3×/week.</p>`;
+};
+
+const renderGaps = (scope) => {
+  const dates = [...new Set(scope.map(p => p.date))].sort();
+  if (dates.length < 2) { $('#time-gaps').innerHTML = svgEmpty('Need at least 2 dated posts to detect gaps.'); return; }
+  const gaps = [];
+  for (let i = 1; i < dates.length; i++) {
+    const d = daysBetween(dates[i - 1], dates[i]);
+    if (d > 7) gaps.push({ from: dates[i - 1], to: dates[i], days: d });
+  }
+  if (!gaps.length) { $('#time-gaps').innerHTML = `<div class="insight" style="border-left-color:#10B981">✅ No posting gaps longer than 7 days. Nice consistency!</div>`; return; }
+  $('#time-gaps').innerHTML = gaps.sort((a, b) => b.days - a.days).map(g =>
+    `<div class="insight" style="border-left-color:#EF4444"><b>${g.days} days</b> with no posts<br><span class="muted">${fmtDate(g.from)} → ${fmtDate(g.to)}</span></div>`).join('');
+};
+
+const renderTime = () => {
+  const scope = timeScope();
+  renderBestDay(scope);
+  renderHeatmap(scope);
+  renderFrequency(scope);
+  renderConsistency(scope);
+  renderGaps(scope);
+};
+
+/* ============================================================
+   ANALYTICS — filter setup + page dispatch
+   ============================================================ */
+/** Build a checkbox multiselect bound to an external Set. */
+const buildMultiselect = (host, items, set, onChange) => {
+  host.classList.add('ms');
+  host.innerHTML = '';
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'btn ms-btn';
+  const pop = document.createElement('div'); pop.className = 'ms-pop';
+  const upd = () => { btn.textContent = (set.size === 0 ? 'All' : `${set.size} selected`) + ' ▾'; };
+  items.forEach(it => {
+    const l = document.createElement('label');
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = set.has(it);
+    cb.addEventListener('change', () => { cb.checked ? set.add(it) : set.delete(it); upd(); onChange(); });
+    l.appendChild(cb); l.append(' ' + it); pop.appendChild(l);
+  });
+  btn.addEventListener('click', (e) => { e.stopPropagation(); host.classList.toggle('open'); });
+  host.appendChild(btn); host.appendChild(pop); upd();
+};
+
+/** (Re)populate all analytics filter controls from settings. */
+const rebuildAnalyticsFilters = () => {
+  [...dashPlatforms].forEach(p => { if (!settings.platforms.includes(p)) dashPlatforms.delete(p); });
+  buildMultiselect($('#dash-platform-ms'), settings.platforms, dashPlatforms, () => renderDashboardDelayed());
+  fillSelect($('#dash-pillar'), settings.pillars, { includeAll: true });
+  fillSelect($('#dash-format'), FORMATS, { includeAll: true });
+  fillSelect($('#pat-platform'), settings.platforms, { includeAll: true });
+  fillSelect($('#time-platform'), settings.platforms, { includeAll: true });
+};
+
+/** Wire analytics filter change events (once). */
+const setupAnalytics = () => {
+  $('#dash-range').addEventListener('change', () => {
+    const custom = $('#dash-range').value === 'custom';
+    $('#dash-from-w').style.display = custom ? '' : 'none';
+    $('#dash-to-w').style.display = custom ? '' : 'none';
+    renderDashboardDelayed();
+  });
+  ['#dash-from', '#dash-to', '#dash-pillar', '#dash-format'].forEach(s => $(s).addEventListener('change', renderDashboardDelayed));
+  $('#pat-platform').addEventListener('change', renderPatterns);
+  $('#time-platform').addEventListener('change', renderTime);
+  // Close any open multiselect on outside click
+  document.addEventListener('click', (e) => { if (!e.target.closest('.ms')) $$('.ms').forEach(m => m.classList.remove('open')); });
+};
+
+/** Render the analytics page being shown. */
+const renderPage = (page) => {
+  if (page === 'dashboard') renderDashboard();
+  else if (page === 'patterns') renderPatterns();
+  else if (page === 'time') renderTime();
+  else if (page === 'settings') renderSettings();
+};
+
+/* ============================================================
+   EVENT WIRING
+   ============================================================ */
+const initEvents = () => {
+  // Add / modal
+  $('#btn-add-post').addEventListener('click', () => openModal());
+  $('#modal-close').addEventListener('click', closeModal);
+  $('#modal-cancel').addEventListener('click', closeModal);
+  $('#modal-save').addEventListener('click', savePost);
+  $('#modal-delete').addEventListener('click', () => deletePost($('#p-id').value));
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+
+  // Date → auto day + auto Post ID (only when creating)
+  $('#p-date').addEventListener('change', () => {
+    const iso = $('#p-date').value;
+    $('#p-day').value = dayFromDate(iso);
+    if (!$('#p-id').value) $('#p-postid').value = genPostId(iso);
+  });
+
+  // Live score preview on any metric change
+  ['p-views','p-likes','p-comments','p-shares','p-bookmarks','p-visits','p-clicks','p-followers']
+    .forEach(id => $('#' + id).addEventListener('input', updateScorePreview));
+
+  // Filters
+  ['f-search','f-platform','f-pillar','f-format','f-tier','f-from','f-to'].forEach(id =>
+    $('#' + id).addEventListener('input', () => { currentPage = 1; renderTable(); }));
+  $('#f-reset').addEventListener('click', () => {
+    ['f-search','f-platform','f-pillar','f-format','f-tier','f-from','f-to'].forEach(id => $('#' + id).value = '');
+    currentPage = 1; renderTable();
+  });
+
+  // Settings add buttons (platforms also carry a color)
+  const inputOf = { platforms: '#add-platform', pillars: '#add-pillar', ctas: '#add-cta' };
+  const doAdd = (key) => {
+    const color = key === 'platforms' ? $('#add-platform-color').value : undefined;
+    addSetting(key, $(inputOf[key]).value, color);
+    $(inputOf[key]).value = '';
+  };
+  $$('[data-add]').forEach(btn => btn.addEventListener('click', () => doAdd(btn.dataset.add)));
+  Object.entries(inputOf).forEach(([key, sel]) =>
+    $(sel).addEventListener('keydown', e => { if (e.key === 'Enter') doAdd(key); }));
+
+  // Clear all data — double confirmation
+  $('#reset-all').addEventListener('click', async () => {
+    const first = await confirmModal({ title: 'Clear all data', message: 'This deletes every post and resets all settings to defaults. Export a backup first if you need one.', confirmText: 'Continue' });
+    if (!first) return;
+    const second = await confirmModal({ title: 'Are you absolutely sure?', message: 'This cannot be undone. All posts and custom settings will be permanently removed.', confirmText: 'Delete everything' });
+    if (!second) return;
+    posts = []; settings = structuredClone(DEFAULT_SETTINGS);
+    localStorage.setItem(STORAGE_BACKUP_COUNTER, '0');
+    localStorage.removeItem(STORAGE_LAST_BACKUP);
+    savePosts(); saveSettings();
+    refreshAllDropdowns(); rebuildAnalyticsFilters(); renderSettings(); renderTable();
+    toast('All data cleared.', 'info');
+  });
+
+  // Export section
+  $('#exp-csv').addEventListener('click', () => exportCSV(dashScope()));
+  $('#exp-json').addEventListener('click', exportJSON);
+  $('#exp-import').addEventListener('click', () => $('#import-file').click());
+  $('#import-file').addEventListener('change', (e) => { if (e.target.files[0]) importJSON(e.target.files[0]); e.target.value = ''; });
+
+  // Copy for Claude
+  $('#gen-summary').addEventListener('click', () => { $('#summary-out').value = generateClaudeSummary(); toast('Summary generated.', 'success'); });
+  $('#copy-summary').addEventListener('click', () => {
+    const s = $('#summary-out').value || generateClaudeSummary();
+    $('#summary-out').value = s; copyText(s);
+  });
+
+  // Esc closes modal
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modal.classList.contains('open')) closeModal(); });
+};
+
+/* ============================================================
+   INIT
+   ============================================================ */
+const init = () => {
+  loadPosts();
+  loadSettings();
+  initNav();
+  refreshAllDropdowns();
+  rebuildAnalyticsFilters();
+  setupAnalytics();
+  renderPrompts();
+  renderSettings();
+  renderTable();
+  initEvents();
+};
+
+init();
+</script>
+</body>
+</html>
